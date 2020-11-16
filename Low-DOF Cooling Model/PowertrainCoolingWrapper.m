@@ -35,10 +35,10 @@ clear Data
 
 %% Environment Characterization
 Environment.Ambient = ...
-    load('C:\Users\maxbo\Downloads\Driveline_Modeling_8-16-2020_4_17\Driveline Modeling\Environmental Studies\FontanaTempHist-2020-15-8_10_30.mat');
+    load('FontanaTempHist-2020-15-8_10_30.mat');
 
 Environment.Surface = ...
-    load('C:\Users\maxbo\Downloads\Driveline_Modeling_8-16-2020_4_17\Driveline Modeling\Environmental Studies\NearSurfaceTempModel-2020-15-8_10_41.mat');
+    load('NearSurfaceTempModel-2020-15-8_10_41.mat');
 
 Environment.Inlet.Height = 5; % Height of Inlet Centroid [in]
 Environment.Outlet.Height = 3; % Height of Outlet Centroid [in]
