@@ -23,6 +23,14 @@ clear fdir diridx wdir
 
 rng('default') % For Reproducability in Development
 
+%% TO DO
+% Entropic heat as a function of C rate (curve fitting?)
+% Realistic fan velocity accounting for constricted path
+% Characterize thermal pad compression
+% Resistance through spot welds
+% "COLLECTOR RESISTANCES" are in wrong units (W-m^2/K)
+
+
 %% Drive Cycle Processing
 Request.TorqueScaling = 100 ./ 60 .* 0.9; % Percent of Total Torque During Endurance []
 
@@ -74,9 +82,13 @@ Material.Kapton = table( 0.8, ... % Thermal Conductivitiy [W/m-K]
                          'VariableNames', {'k'} );
     % Source: https://www.dupont.com/products/kapton-mt-plus.html
     
-Material.Lucite = table( 0.2, ... % Thermal Conductivity [W/m-k]
+Material.Lucite = table( 0.2, ... % Thermal Conductivity [W/m-K]
                          'VariableNames', {'k'} );
     % Source: http://www.matweb.com/search/datasheet.aspx?bassnum=O1303&ckck=1
+
+Material.Tflex = table( 7.5, ... % Thermal Conductivity [W/m-K]
+                        'VariableNames', {'k'} );
+    % Source: https://www.laird.com/sites/default/files/tflex-hd90000-datasheet.pdf
     
 %% Accumulator Characterization
 %%% Cell Characterization
@@ -118,20 +130,18 @@ Accumulator.Potting.Dimensions.Volume = 0.000695 .* 5; % Potting Volume (CAD) [i
 Accumulator = PottingCalculations( Accumulator );
 
 %%% Collector Characterization
-Accumulator.Collector.Dimensions.Laminate = [1 2 3 2 4 2 3 2 1]; % Laminate Construction
-    % 1 - Coverlay
-    % 2 - Adhesive
-    % 3 - Trace
-    % 4 - Substrate
+Accumulator.Collector.Dimensions.Laminate = [1 2]; % Laminate Construction
+Accumulator.Collector.Material.k = [ Material.Copper.k , Material.Tflex.k];
+    % 1 - Copper Busbars
+    % 2 - Tflex Thermal Pad
 
-Accumulator.Collector.Dimensions.TraceDensity = 4 * (10.764) / (35.274); % [oz/ft^2 -> kg/m^2]
 
-Accumulator.Collector.Dimensions.Thickness = [2 / (39370), ... % Coverlay Thickness
-                   1 / (39370), ... % Adhesive Thickness
-                   Accumulator.Collector.Dimensions.TraceDensity ./ Material.Copper.rho, ... % Trace Thickness
-                   6 / (39370)]; % Substrate Thickness, [mils -> m]
+Accumulator.Collector.Dimensions.Thickness = [40 / (39370), ... % Busbar Thickness
+                                                10 / (39370)]; % Thermal Pad Thickness, [mils -> m]
+Accumulator.Collector.Dimensions.Area = [0.02935478, ... % Busbar Area
+                                                0.04483862]; % Thermal Pad Area
 
-Accumulator = CollectorResistanceCalculations( Accumulator, Material ); % See Local Functions
+Accumulator = CollectorResistanceCalculations( Accumulator ); % See Local Functions
 
 %%% Fin Characterization
 Accumulator.Fin.Dimensions.Height = 0.25 * (0.0254); % Fin Height [in -> m]
@@ -198,7 +208,13 @@ Parameter.Accumulator = Accumulator;
 Parameter.Motor = Motor;
 Parameter.Controller = Controller;
 
-clear Fields i
+clear Fields i 
+
+%% Run Simulink Model
+sim('PowertrainCoolingModel.slx');
+plot(ans.Thermal.PosTab)
+
+
 %% Local Functions
 %%% Request Calculations
 function [Data] = RequestImport(filename, dataLines)
@@ -328,25 +344,17 @@ function Accumulator = PottingCalculations( Accumulator )
     Accumulator.Potting.Mass.m = Accumulator.Potting.Mass.rho .* Accumulator.Potting.Dimensions.Volume;
 end
 
-function Accumulator = CollectorResistanceCalculations( Accumulator, Material )
+function Accumulator = CollectorResistanceCalculations( Accumulator )
     Accumulator.Collector.Thermal.Resistance = 0;
     for i = 1 : length( Accumulator.Collector.Dimensions.Laminate )
-        switch Accumulator.Collector.Dimensions.Laminate(i)
-            case 1
-                Accumulator.Collector.Thermal.Resistance = Accumulator.Collector.Thermal.Resistance + ...
-                    Accumulator.Collector.Dimensions.Thickness(1) / Material.Kapton.k;  
-            case 2
-                Accumulator.Collector.Thermal.Resistance = Accumulator.Collector.Thermal.Resistance + ...
-                    Accumulator.Collector.Dimensions.Thickness(2) / Material.Lucite.k;
-            case 3
-                Accumulator.Collector.Thermal.Resistance = Accumulator.Collector.Thermal.Resistance + ...
-                    Accumulator.Collector.Dimensions.Thickness(3) / Material.Copper.k;
-            case 4
-                Accumulator.Collector.Thermal.Resistance = Accumulator.Collector.Thermal.Resistance + ...
-                    Accumulator.Collector.Dimensions.Thickness(4) / Material.Kapton.k;
-        end
+        
+        Accumulator.Collector.Thermal.Resistance = Accumulator.Collector.Thermal.Resistance +...
+            Accumulator.Collector.Dimensions.Thickness(Accumulator.Collector.Dimensions.Laminate(i)) /...
+            Accumulator.Collector.Material.k(Accumulator.Collector.Dimensions.Laminate(i)) /...
+            Accumulator.Collector.Dimensions.Area(Accumulator.Collector.Dimensions.Laminate(i));
+
     end
-    Accumulator.Collector.Thermal.Resistance 
+    Accumulator.Collector.Thermal.Resistance;
 end
 
 function Accumulator = AccumulatorFinCalculations( Accumulator )
