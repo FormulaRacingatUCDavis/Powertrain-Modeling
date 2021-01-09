@@ -1,3 +1,4 @@
+tic
 clc; clear; close all;
 
 %% Powertrain COTS Analysis
@@ -7,10 +8,11 @@ clc; clear; close all;
 %% COTS Database Imports
 [Cell, Controller, Motor] = SpreadsheetImport();
 
-%% Useful Constants
+%% Constraints and Constants
 
 Pack.V = (1:600);    % Pack Voltage [V]
-Pack.E = 6.7;    % Pack Energy Capacity [kWh]
+Pack.E = 6.7 .* 1000;    % Pack Energy Capacity [kWh -> Wh]
+Pack.P = 70 .* 1000;    % Required Peak Power [kW -> W]
 Endurance = 22156741.88; % Constant from endurance, sum of Current^2 times each time step
 CellCp = 0.902;  % Lithium ion cell specific heat capacity [J/g-K]
 
@@ -21,7 +23,6 @@ CellCp = 0.902;  % Lithium ion cell specific heat capacity [J/g-K]
 % Cell combination
 
 Powertrain = struct();
-
 for i = 1 : length(Motor)
     for j = 1 : length(Controller)
         for k = 1 : length(Cell)
@@ -35,49 +36,56 @@ for i = 1 : length(Motor)
             Powertrain(i,j,k).VRange = [];      % Defining these as empty in case compatability check
             Powertrain(i,j,k).Series = [];      % Breaks everything... this fix doesn't actually work
             Powertrain(i,j,k).Parallel = [];    %
-            Powertrain(i,j,k).Temp = [];        % These should be allocated before the loop somehow
+            Powertrain(i,j,k).Temp = [];        % These should be allocated before the loop someho
             
             %%% Compatibility Checks
             
             % (Motor / Controller Compat)
             if Controller(j).Voltage < Motor(i).Voltage
-               Powertrain(i,j,k).Flag = 'Controller & Motor Voltages Not Compatible | ';
-%                break \\\ commented out to continue compatability checks...
-%                suppose there's no reason to do this, which rasies the
-%                question do we need the debug message or can "Flag" just be
-%                a logical value
+               Powertrain(i,j,k).Flag = 1;
             end
             
             % (Cell Resistance Has Been Given)
             if isnan(Cell(k).Resistance)
-                Powertrain(i,j,k).Flag = [Powertrain(i,j,k).Flag, 'No Cell Resistance Value | '];
-%                 break \\\ THIS HAD TO BE COMMENTED OUT BECAUSE IT FUCKS
-%                 EVERYTHING UP
+                Powertrain(i,j,k).Flag = 1;
             end
             
             %%% Cell Temperature Change
             
             % Find Usable Voltage Range For Each Config
-            Powertrain(i,j,k).VRange = [max((min(Powertrain(i,j,k).Motor.Voltage,Powertrain(i,j,k).Controller.Voltage)-200),0) :...
+            Powertrain(i,j,k).VRange = [max((min(Powertrain(i,j,k).Motor.Voltage,Powertrain(i,j,k).Controller.Voltage)-200),100) :...
                                         min(Powertrain(i,j,k).Motor.Voltage,Powertrain(i,j,k).Controller.Voltage)];
             
             % Number of Cells in Series / Parallel
-            Powertrain(i,j,k).Series = floor(Powertrain(i,j,k).VRange ./ Cell(k).VoltageMax);
-            Powertrain(i,j,k).Parallel = floor(Pack.E ./ (Powertrain(i,j,k).Series .* Cell(k).VoltageMax .* Cell(k).Capacity) .* 1000);
+            Powertrain(i,j,k).Series = round(Powertrain(i,j,k).VRange ./ Cell(k).VoltageMax);
+            Powertrain(i,j,k).Parallel = round(Pack.E ./ (Powertrain(i,j,k).Series .* Cell(k).VoltageMax .* Cell(k).Capacity));
             
-            % Temperature Change in Cells , Using Cell Ohmic Heat Gen and
-            % Cell Thermall Mass
-            Powertrain(i,j,k).Temp = (10/6 .* 117.6./Powertrain(i,j,k).VRange).^2 .* (Cell(k).Resistance .*...
+            %%% Compatability Check (Cells Can Reach Required Peak Power)
+            if ~any(sum(Powertrain(i,j,k).VRange .* Cell(k).CurrentMax .* ceil(Pack.E ./ (Powertrain(i,j,k).VRange .* Cell(k).Capacity)) > Pack.P))
+                Powertrain(i,j,k).Flag = 1;
+            end
+        end
+    end
+end
+
+% Determine Cell Temp Change
+A = length(Controller) ; B = length(Cell);
+parfor i = 1 : length(Motor)
+    for j = 1 : A
+        for k = 1 : B
+            if isempty(Powertrain(i,j,k).Flag)
+            Powertrain(i,j,k).Temp = (10/6 .* 117.6./(floor(Powertrain(i,j,k).VRange./4.2).*4.2)).^2 .* (Cell(k).Resistance .*...
                                       Powertrain(i,j,k).Series ./ Powertrain(i,j,k).Parallel) .* Endurance ./...
                                       (Cell(k).Mass .* Powertrain(i,j,k).Series .* Powertrain(i,j,k).Parallel .*...
                                       CellCp);
+            end
         end
     end
 end
 
 %% Plotting Stuff
 figure(1)
-for i = 1 : length(Motor)
+parfor i = 1 : length(Motor)
     for j = 1 : length(Controller)
         for k = 1 : length(Cell)
             
@@ -90,12 +98,54 @@ for i = 1 : length(Motor)
     end
 end
 
-title('A Clever Title')
+title('Temperature Change of Cell Over Voltage Range')
 xlim([100,600]);
 xlabel('Powertrain Voltage [V]')
 ylim([0,100]);
 ylabel('Endurance Temperature Change [C]')
 
+figure(2)
+parfor i = 1 : length(Motor)
+    for j = 1 : length(Controller)
+        for k = 1 : length(Cell)
+            
+            if isempty(Powertrain(i,j,k).Flag)
+                plot(Powertrain(i,j,k).VRange,Powertrain(i,j,k).Series.*Powertrain(i,j,k).Parallel.*Cell(k).Mass./1000);
+                hold on
+            end
+            
+        end
+    end
+end
+
+title('Cell Mass over Voltage Range')
+xlim([100,600]);
+xlabel('Powertrain Voltage [V]')
+ylim([0,100]);
+ylabel('Cell Mass [kg]')
+
+figure(3)
+parfor i = 1 : length(Motor)
+    for j = 1 : length(Controller)
+        for k = 1 : length(Cell)
+            
+            if isempty(Powertrain(i,j,k).Flag)
+                plot(Powertrain(i,j,k).VRange,Powertrain(i,j,k).Series.*Powertrain(i,j,k).Parallel.*Cell(k).Mass./1000 + Powertrain(i,j,k).Motor.Mass + Powertrain(i,j,k).Controller.Mass);
+                hold on
+            end
+            
+        end
+    end
+end
+
+title('Powertrain Mass over Voltage Range')
+xlim([100,600]);
+xlabel('Powertrain Voltage [V]')
+ylim([50,150]);
+ylabel('Mass [kg]')
+
+clear i j k A B
+timeElapsed = toc
 %% Local Functions   
 function [Cell, Controller, Motor] = SpreadsheetImport()
     % Import Spreadsheets
@@ -122,15 +172,15 @@ function [Cell, Controller, Motor] = SpreadsheetImport()
 
         Cell(i-7).Capacity     = str2double(Spreadsheet.Cell{i,7 });
 
-        Cell(i-7).Current.Cont = str2double(Spreadsheet.Cell{i,8 });
-        Cell(i-7).Current.Max  = str2double(Spreadsheet.Cell{i,9 });
+        Cell(i-7).CurrentCont = str2double(Spreadsheet.Cell{i,8 });
+        Cell(i-7).CurrentMax  = str2double(Spreadsheet.Cell{i,9 });
 
         Cell(i-7).Resistance   = str2double(Spreadsheet.Cell{i,10}) ./ 1000; % Internal resistance [mOhms -> Ohms]
 
         Cell(i-7).Mass         = str2double(Spreadsheet.Cell{i,21});
 
         Cell(i-7).Cost         = str2double(Spreadsheet.Cell{i,27});
-        end
+    end
     
     % Allocate Controller Structure
     Controller = struct();
@@ -141,8 +191,8 @@ function [Cell, Controller, Motor] = SpreadsheetImport()
 
         Controller(i-3).Voltage = str2double(Spreadsheet.Controller{i,5 });
 
-        Controller(i-3).Current.Cont = str2double(Spreadsheet.Controller{i,7 });
-        Controller(i-3).Current.Max = str2double(Spreadsheet.Controller{i,8 });
+        Controller(i-3).CurrentCont = str2double(Spreadsheet.Controller{i,7 });
+        Controller(i-3).CurrentMax = str2double(Spreadsheet.Controller{i,8 });
 
         Controller(i-3).Mass = str2double(Spreadsheet.Controller{i,20 });
     end
@@ -156,8 +206,8 @@ function [Cell, Controller, Motor] = SpreadsheetImport()
         
         Motor(i-3).Voltage = str2double(Spreadsheet.Motor{i,5 });
         
-        Motor(i-3).Current.Cont = str2double(Spreadsheet.Motor{i,7 });
-        Motor(i-3).Current.Max = str2double(Spreadsheet.Motor{i,8 });
+        Motor(i-3).CurrentCont = str2double(Spreadsheet.Motor{i,7 });
+        Motor(i-3).CurrentMax = str2double(Spreadsheet.Motor{i,8 });
         
         Motor(i-3).Mass = str2double(Spreadsheet.Motor{i,24 });
     end
