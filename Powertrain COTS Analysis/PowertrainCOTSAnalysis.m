@@ -23,6 +23,7 @@ CellCp = 0.902;  % Lithium ion cell specific heat capacity [J/g-K]
 % Cell combination
 
 Powertrain = struct();
+
 for i = 1 : length(Motor)
     for j = 1 : length(Controller)
         for k = 1 : length(Cell)
@@ -33,21 +34,18 @@ for i = 1 : length(Motor)
             
             Powertrain(i,j,k).Flag = [];
             
-            Powertrain(i,j,k).VRange = [];      % Defining these as empty in case compatability check
-            Powertrain(i,j,k).Series = [];      % Breaks everything... this fix doesn't actually work
-            Powertrain(i,j,k).Parallel = [];    %
-            Powertrain(i,j,k).Temp = [];        % These should be allocated before the loop someho
-            
             %%% Compatibility Checks
             
             % (Motor / Controller Compat)
             if Controller(j).Voltage < Motor(i).Voltage
-               Powertrain(i,j,k).Flag = 1;
+                Powertrain(i,j,k).Flag = 1;
+                continue
             end
             
             % (Cell Resistance Has Been Given)
             if isnan(Cell(k).Resistance)
                 Powertrain(i,j,k).Flag = 1;
+                continue
             end
             
             %%% Cell Temperature Change
@@ -59,6 +57,8 @@ for i = 1 : length(Motor)
             % Number of Cells in Series / Parallel
             Powertrain(i,j,k).Series = round(Powertrain(i,j,k).VRange ./ Cell(k).VoltageMax);
             Powertrain(i,j,k).Parallel = round(Pack.E ./ (Powertrain(i,j,k).Series .* Cell(k).VoltageMax .* Cell(k).Capacity));
+            Powertrain(i,j,k).Accum.Resistance = Powertrain(i,j,k).Series ./ Powertrain(i,j,k).Parallel .* Powertrain(i,j,k).Cell.Resistance;
+            Powertrain(i,j,k).Accum.Mass = Powertrain(i,j,k).Series.*Powertrain(i,j,k).Parallel.*Cell(k).Mass./1000;
             
             %%% Compatability Check (Cells Can Reach Required Peak Power)
             if ~any(sum(Powertrain(i,j,k).VRange .* Cell(k).CurrentMax .* ceil(Pack.E ./ (Powertrain(i,j,k).VRange .* Cell(k).Capacity)) > Pack.P))
@@ -74,7 +74,7 @@ parfor i = 1 : length(Motor)
     for j = 1 : A
         for k = 1 : B
             if isempty(Powertrain(i,j,k).Flag)
-            Powertrain(i,j,k).Temp = (10/6 .* 117.6./(floor(Powertrain(i,j,k).VRange./4.2).*4.2)).^2 .* (Cell(k).Resistance .*...
+                Powertrain(i,j,k).Temp = (10/6 .* 117.6./(floor(Powertrain(i,j,k).VRange./4.2).*4.2)).^2 .* (Cell(k).Resistance .*...
                                       Powertrain(i,j,k).Series ./ Powertrain(i,j,k).Parallel) .* Endurance ./...
                                       (Cell(k).Mass .* Powertrain(i,j,k).Series .* Powertrain(i,j,k).Parallel .*...
                                       CellCp);
@@ -110,7 +110,7 @@ parfor i = 1 : length(Motor)
         for k = 1 : length(Cell)
             
             if isempty(Powertrain(i,j,k).Flag)
-                plot(Powertrain(i,j,k).VRange,Powertrain(i,j,k).Series.*Powertrain(i,j,k).Parallel.*Cell(k).Mass./1000);
+                plot(Powertrain(i,j,k).VRange,Powertrain(i,j,k).Accum.Mass);
                 hold on
             end
             
@@ -130,7 +130,8 @@ parfor i = 1 : length(Motor)
         for k = 1 : length(Cell)
             
             if isempty(Powertrain(i,j,k).Flag)
-                plot(Powertrain(i,j,k).VRange,Powertrain(i,j,k).Series.*Powertrain(i,j,k).Parallel.*Cell(k).Mass./1000 + Powertrain(i,j,k).Motor.Mass + Powertrain(i,j,k).Controller.Mass);
+                plot(Powertrain(i,j,k).VRange,Powertrain(i,j,k).Accum.Mass + Powertrain(i,j,k).Motor.Mass +...
+                     Powertrain(i,j,k).Controller.Mass);
                 hold on
             end
             
@@ -143,6 +144,26 @@ xlim([100,600]);
 xlabel('Powertrain Voltage [V]')
 ylim([50,150]);
 ylabel('Mass [kg]')
+
+figure(4)
+parfor i = 1 : length(Motor)
+    for j = 1 : length(Controller)
+        for k = 1 : length(Cell)
+            
+            if isempty(Powertrain(i,j,k).Flag)
+                plot(Powertrain(i,j,k).VRange , Powertrain(i,j,k).Accum.Mass ./ (1000 .* Powertrain(i,j,k).Accum.Resistance));
+                hold on
+            end
+            
+        end
+    end
+end
+
+title('Cell Mass / Resistance Ratio over Voltage Range')
+xlim([100,600]);
+xlabel('Powertrain Voltage [V]')
+ylim([0,10]);
+ylabel('g / Ohm')
 
 clear i j k A B
 timeElapsed = toc
@@ -261,7 +282,6 @@ function [Cell, Controller, Motor] = SpreadsheetImport()
             byteStream.close();
             out = typecast(byteStream.toByteArray', 'uint8'); 
         end
-
         function data = ParseCSV(data)
         % Splits data into individual lines
             data = textscan(data,'%s','whitespace','\n');
