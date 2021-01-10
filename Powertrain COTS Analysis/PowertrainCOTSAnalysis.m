@@ -9,12 +9,12 @@ clc; clear; close all;
 [Cell, Controller, Motor] = SpreadsheetImport();
 
 %% Constraints and Constants
+Accumulator.Capacity  = 6.7 .* 1000; % Pack Energy Capacity [kWh -> Wh]
+Accumulator.PowerPeak = 65  .* 1000; % Required Peak Power [kW -> W]
 
-Pack.V = (1:600);    % Pack Voltage [V]
-Pack.E = 6.7 .* 1000;    % Pack Energy Capacity [kWh -> Wh]
-Pack.P = 70 .* 1000;    % Required Peak Power [kW -> W]
-Endurance = 22156741.88; % Constant from endurance, sum of Current^2 times each time step
-CellCp = 0.902;  % Lithium ion cell specific heat capacity [J/g-K]
+EnduranceActionLoad    = 22156741.88; % Constant from endurance, sum of Current^2 times each time step
+
+Cell(1).Cp             = 0.902      ; % Lithium ion cell specific heat capacity [J/g-K]
 
 %% Powertrain Configuration Sweeping
 % Determine feasible voltage range for each Motor / Controller
@@ -22,51 +22,70 @@ CellCp = 0.902;  % Lithium ion cell specific heat capacity [J/g-K]
 % find the Change in Temperature vs. Voltage for every Motor / Controller /
 % Cell combination
 
-Powertrain = struct();
+Powertrain = struct( 'Motor'      , [] , ...
+                     'Controller' , [] , ...
+                     'Cell'       , [] , ...
+                     'Accumulator', [] );
+Powertrain( length(Motor), length(Controller), length(Cell) ).Motor = [];
 
 for i = 1 : length(Motor)
     for j = 1 : length(Controller)
         for k = 1 : length(Cell)
+            Cell(k).Cp = Cell(1).Cp; % Allocate Typical Li-Ion Cell Specific Heat Capacity
             
-            Powertrain(i,j,k).Motor = Motor(i);
-            Powertrain(i,j,k).Controller = Controller(j);
-            Powertrain(i,j,k).Cell = Cell(k);
+            Powertrain(i,j,k).Motor       = Motor(i);
+            Powertrain(i,j,k).Controller  = Controller(j);
+            Powertrain(i,j,k).Cell        = Cell(k);
+            Powertrain(i,j,k).Accumulator = Accumulator;
             
             Powertrain(i,j,k).Flag = [];
             
-            %%% Compatibility Checks
-            
-            % (Motor / Controller Compat)
-            if Controller(j).Voltage < Motor(i).Voltage
-                Powertrain(i,j,k).Flag = 1;
+            %%% Initial Compatibility Parsing 
+            if AnyFieldNaN( Powertrain(i,j,k) )
+                Powertrain(i,j,k).Flag = "(0) Insufficient Information";
+                continue
+            elseif Controller(j).Voltage < Accumulator.PowerPeak / Controller(j).CurrentMax
+                Powertrain(i,j,k).Flag = "(1) Controller Peak Power Not Sufficient";
+                continue
+            elseif Motor(i).Voltage < Accumulator.PowerPeak / Motor(i).CurrentMax
+                Powertrain(i,j,k).Flag = "(2) Motor Peak Power Not Sufficient";
+                continue
+            elseif (Controller(j).Voltage < Accumulator.PowerPeak / Motor(i).CurrentMax) || ...
+                   (Motor(i).Voltage < Accumulator.PowerPeak / Controller(j).CurrentMax)
+                Powertrain(i,j,k).Flag = "(3) Incompatible Motor & Controller Voltages";
                 continue
             end
             
-            % (Cell Resistance Has Been Given)
-            if isnan(Cell(k).Resistance)
-                Powertrain(i,j,k).Flag = 1;
+            %%% Define Compatible Voltage Range
+            Powertrain(i,j,k).Accumulator.Voltage = ...
+                ceil( Accumulator.PowerPeak / min( [Motor(i).CurrentMax, Controller(j).CurrentMax] ) ) : ...
+                floor( min( [Motor(i).Voltage, Controller(j).Voltage] ) );
+            
+            %%% Calculate Accumulator Configuration & Metrics
+            Powertrain(i,j,k).Accumulator.Series = ...
+                round( Powertrain(i,j,k).Accumulator.Voltage ./ Cell(k).VoltageMax );
+            
+            Powertrain(i,j,k).Accumulator.Parallel = round( Accumulator.Capacity ./ ...
+                (Powertrain(i,j,k).Accumulator.Series .* Cell(k).Capacity .* Cell(k).Capacity));
+            
+            Powertrain(i,j,k).Accumulator.Resistance = Powertrain(i,j,k).Accumulator.Series ./ ...
+                Powertrain(i,j,k).Accumulator.Parallel .* Cell(k).Resistance;
+            
+            Powertrain(i,j,k).Accumulator.Mass = Powertrain(i,j,k).Accumulator.Series .* ...
+                Powertrain(i,j,k).Accumulator.Parallel .* Cell(k).Mass ./ 1000;
+            
+            Powertrain(i,j,k).Accumulator.PowerPeak = Powertrain(i,j,k).Accumulator.Parallel .* ...
+                Powertrain(i,j,k).Accumulator.Series .* Cell(k).CurrentMax .* Cell(k).VoltageMax;
+            
+            if Powertrain(i,j,k).Accumulator.PowerPeak < 0.9*Accumulator.PowerPeak 
+                Powertrain(i,j,k).Flag = "(4) Cells Cannot Supply Sufficient Peak Power";
                 continue
-            end
-            
-            %%% Cell Temperature Change
-            
-            % Find Usable Voltage Range For Each Config
-            Powertrain(i,j,k).VRange = [max((min(Powertrain(i,j,k).Motor.Voltage,Powertrain(i,j,k).Controller.Voltage)-200),100) :...
-                                        min(Powertrain(i,j,k).Motor.Voltage,Powertrain(i,j,k).Controller.Voltage)];
-            
-            % Number of Cells in Series / Parallel
-            Powertrain(i,j,k).Series = round(Powertrain(i,j,k).VRange ./ Cell(k).VoltageMax);
-            Powertrain(i,j,k).Parallel = round(Pack.E ./ (Powertrain(i,j,k).Series .* Cell(k).VoltageMax .* Cell(k).Capacity));
-            Powertrain(i,j,k).Accum.Resistance = Powertrain(i,j,k).Series ./ Powertrain(i,j,k).Parallel .* Powertrain(i,j,k).Cell.Resistance;
-            Powertrain(i,j,k).Accum.Mass = Powertrain(i,j,k).Series.*Powertrain(i,j,k).Parallel.*Cell(k).Mass./1000;
-            
-            %%% Compatability Check (Cells Can Reach Required Peak Power)
-            if ~any(sum(Powertrain(i,j,k).VRange .* Cell(k).CurrentMax .* ceil(Pack.E ./ (Powertrain(i,j,k).VRange .* Cell(k).Capacity)) > Pack.P))
-                Powertrain(i,j,k).Flag = 1;
-            end
+            end   
         end
     end
 end
+
+return
 
 % Determine Cell Temp Change
 A = length(Controller) ; B = length(Cell);
@@ -183,18 +202,18 @@ function [Cell, Controller, Motor] = SpreadsheetImport()
     Cell = struct();
     Cell( size(Spreadsheet.Cell, 1) - 7 ).Model = [];
     for i = 8 : size(Spreadsheet.Cell, 1)
-        Cell(i-7).Model        = Spreadsheet.Cell(i,1);
-        Cell(i-7).Manufacturer = Spreadsheet.Cell(i,2);
-        Cell(i-7).Chemistry    = Spreadsheet.Cell(i,3);
-        Cell(i-7).Geometry     = Spreadsheet.Cell(i,4);
+        Cell(i-7).Model        = Spreadsheet.Cell{i,1};
+        Cell(i-7).Manufacturer = Spreadsheet.Cell{i,2};
+        Cell(i-7).Chemistry    = Spreadsheet.Cell{i,3};
+        Cell(i-7).Geometry     = Spreadsheet.Cell{i,4};
 
-        Cell(i-7).VoltageNom  = str2double(Spreadsheet.Cell{i,5 });
-        Cell(i-7).VoltageMax  = str2double(Spreadsheet.Cell{i,6 });
+        Cell(i-7).VoltageNom   = str2double(Spreadsheet.Cell{i,5 });
+        Cell(i-7).VoltageMax   = str2double(Spreadsheet.Cell{i,6 });
 
         Cell(i-7).Capacity     = str2double(Spreadsheet.Cell{i,7 });
 
-        Cell(i-7).CurrentCont = str2double(Spreadsheet.Cell{i,8 });
-        Cell(i-7).CurrentMax  = str2double(Spreadsheet.Cell{i,9 });
+        Cell(i-7).CurrentCont  = str2double(Spreadsheet.Cell{i,8 });
+        Cell(i-7).CurrentMax   = str2double(Spreadsheet.Cell{i,9 });
 
         Cell(i-7).Resistance   = str2double(Spreadsheet.Cell{i,10}) ./ 1000; % Internal resistance [mOhms -> Ohms]
 
@@ -207,30 +226,30 @@ function [Cell, Controller, Motor] = SpreadsheetImport()
     Controller = struct();
     Controller( size(Spreadsheet.Controller, 1) - 3 ).Model = [];
     for i = 4 : size(Spreadsheet.Controller, 1)
-        Controller(i-3).Model = Spreadsheet.Controller(i,1);
-        Controller(i-3).Manufacturer = Spreadsheet.Controller(i,2);
+        Controller(i-3).Model        = Spreadsheet.Controller{i,1};
+        Controller(i-3).Manufacturer = Spreadsheet.Controller{i,2};
 
-        Controller(i-3).Voltage = str2double(Spreadsheet.Controller{i,5 });
+        Controller(i-3).Voltage      = str2double(Spreadsheet.Controller{i,5 });
 
-        Controller(i-3).CurrentCont = str2double(Spreadsheet.Controller{i,7 });
-        Controller(i-3).CurrentMax = str2double(Spreadsheet.Controller{i,8 });
+        Controller(i-3).CurrentCont  = str2double(Spreadsheet.Controller{i,7 });
+        Controller(i-3).CurrentMax   = str2double(Spreadsheet.Controller{i,8 });
 
-        Controller(i-3).Mass = str2double(Spreadsheet.Controller{i,20 });
+        Controller(i-3).Mass         = str2double(Spreadsheet.Controller{i,20});
     end
     
     % Allocate Controller Structure
     Motor = struct();
     Motor( size(Spreadsheet.Motor, 1) - 3 ).Model = [];
     for i = 4 : size(Spreadsheet.Motor, 1)
-        Motor(i-3).Model = Spreadsheet.Motor(i,1);
-        Motor(i-3).Manufacturer = Spreadsheet.Motor(i,2);
+        Motor(i-3).Model        = Spreadsheet.Motor{i,1};
+        Motor(i-3).Manufacturer = Spreadsheet.Motor{i,2};
         
-        Motor(i-3).Voltage = str2double(Spreadsheet.Motor{i,5 });
+        Motor(i-3).Voltage      = str2double(Spreadsheet.Motor{i,5 });
         
-        Motor(i-3).CurrentCont = str2double(Spreadsheet.Motor{i,7 });
-        Motor(i-3).CurrentMax = str2double(Spreadsheet.Motor{i,8 });
+        Motor(i-3).CurrentCont  = str2double(Spreadsheet.Motor{i,6 });
+        Motor(i-3).CurrentMax   = str2double(Spreadsheet.Motor{i,7 });
         
-        Motor(i-3).Mass = str2double(Spreadsheet.Motor{i,24 });
+        Motor(i-3).Mass         = str2double(Spreadsheet.Motor{i,24});
     end
     
     %%% Local Spreadsheet Import Function
@@ -296,3 +315,20 @@ function [Cell, Controller, Motor] = SpreadsheetImport()
     end
 end
 
+function Flag = AnyFieldNaN( Structure )
+    Fields = fieldnames( Structure );
+    
+    Flag = false;
+    for f = 1:length(Fields)
+        if ~isempty( Structure.(Fields{f}) )
+            SubFields = fieldnames( Structure.(Fields{f}) );
+
+            for sf = 1:length(SubFields)
+               if any( isnan( Structure.(Fields{f}).(SubFields{sf}) ) )
+                   Flag = true;
+                   return
+               end
+            end
+        end
+    end
+end
