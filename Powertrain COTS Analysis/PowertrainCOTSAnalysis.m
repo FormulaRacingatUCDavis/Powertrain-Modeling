@@ -92,13 +92,87 @@ for i = 1 : length(Motor)
 end
 
 %% Plotting Stuff
+Motors = [];
+Controllers = [];
+Cells = [];
+for i = 1 : length(Motor)
+    for j = 1 : length(Controller)
+        for k = 1 : length(Cell)
+        
+        if isempty(Powertrain(i,j,k).Flag)
+        Motors = [Motors,i];
+        Controllers = [Controllers,j];
+        Cells = [Cells,k];
+        end
+        
+        end
+    end
+end
+Motors = unique(Motors);
+Controllers = unique(Controllers);
+Cells = unique(Cells);
+
+for i = 1 : length(Motor)
+    for j = 1 : length(Controller)
+        for k = 1 : length(Cell)
+            
+            if isempty(Powertrain(i,j,k).Flag)
+                Color = find(Cells == k);
+                Marker = find(Controllers == j);
+
+                switch Color
+                    case 1
+                        Powertrain(i,j,k).Color = 'r';
+                    case 2
+                        Powertrain(i,j,k).Color = 'g';
+                    case 3
+                        Powertrain(i,j,k).Color = 'b';
+                    case 4
+                        Powertrain(i,j,k).Color = 'y';
+                end
+                
+                switch Marker
+                    case 1
+                        Powertrain(i,j,k).Marker = 'o';
+                    case 2
+                        Powertrain(i,j,k).Marker = '+';
+                    case 3
+                        Powertrain(i,j,k).Marker = '*';
+                    case 4
+                        Powertrain(i,j,k).Marker = '.';
+                    case 5
+                        Powertrain(i,j,k).Marker = 'x';
+                    case 6
+                        Powertrain(i,j,k).Marker = 'square';
+                    case 7
+                        Powertrain(i,j,k).Marker = 'diamond';
+                    case 8
+                        Powertrain(i,j,k).Marker = 'pentagram';
+                    case 9
+                        Powertrain(i,j,k).Marker = 'hexagram';
+                    case 10
+                        Powertrain(i,j,k).Marker = '^';
+                    case 11
+                        Powertrain(i,j,k).Marker = 'v';
+                    case 12
+                        Powertrain(i,j,k).Marker = '>';
+                    case 13
+                        Powertrain(i,j,k).Marker = '<';
+                end
+            end
+            
+        end
+    end
+end
+
 figure(1)
 for i = 1 : length(Motor)
     for j = 1 : length(Controller)
         for k = 1 : length(Cell)
             
             if isempty(Powertrain(i,j,k).Flag)
-                plot(Powertrain(i,j,k).Accumulator.Voltage,Powertrain(i,j,k).Temp);
+                    plot(Powertrain(i,j,k).Accumulator.Voltage,Powertrain(i,j,k).Temp,...
+                    'Color',Powertrain(i,j,k).Color,'Marker',Powertrain(i,j,k).Marker);
                 hold on
             end
             
@@ -111,6 +185,7 @@ xlim([100,600]);
 xlabel('Powertrain Voltage [V]')
 ylim([0,100]);
 ylabel('Endurance Temperature Change [C]')
+legend('bro','bruh')
 
 figure(2)
 for i = 1 : length(Motor)
