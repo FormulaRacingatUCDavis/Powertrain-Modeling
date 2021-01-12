@@ -55,10 +55,10 @@ for i = 1 : length(Motor)
                 Powertrain(i,j,k).Flag = "(3) Incompatible Motor & Controller Voltages";
                 continue
             end
-            
+
             %%% Define Compatible Voltage Range
             Powertrain(i,j,k).Accumulator.Voltage = ...
-                ceil( Accumulator.PowerPeak / min( [Motor(i).CurrentMax, Controller(j).CurrentMax] ) ) : ...
+                round( Accumulator.PowerPeak / min( [Motor(i).CurrentMax, Controller(j).CurrentMax] ) ) : ...
                 floor( min( [Motor(i).Voltage, Controller(j).Voltage] ) );
             
             %%% Calculate Accumulator Configuration & Metrics
@@ -66,7 +66,7 @@ for i = 1 : length(Motor)
                 round( Powertrain(i,j,k).Accumulator.Voltage ./ Cell(k).VoltageMax );
             
             Powertrain(i,j,k).Accumulator.Parallel = round( Accumulator.Capacity ./ ...
-                (Powertrain(i,j,k).Accumulator.Series .* Cell(k).Capacity .* Cell(k).Capacity));
+                (Powertrain(i,j,k).Accumulator.Series .* Cell(k).Capacity .* Cell(k).VoltageMax));
             
             Powertrain(i,j,k).Accumulator.Resistance = Powertrain(i,j,k).Accumulator.Series ./ ...
                 Powertrain(i,j,k).Accumulator.Parallel .* Cell(k).Resistance;
@@ -81,12 +81,17 @@ for i = 1 : length(Motor)
                 Powertrain(i,j,k).Flag = "(4) Cells Cannot Supply Sufficient Peak Power";
                 continue
             end
+            
             Powertrain(i,j,k).Temp = (10/6 .* 117.6./(floor(Powertrain(i,j,k).Accumulator.Voltage./...
                                       Powertrain(i,j,k).Cell.VoltageMax).*Powertrain(i,j,k).Cell.VoltageMax)).^2 .*...
                                      (Cell(k).Resistance .* Powertrain(i,j,k).Accumulator.Series ./ ...
                                       Powertrain(i,j,k).Accumulator.Parallel) .* EnduranceActionLoad ./ (Cell(k).Mass .*...
                                       Powertrain(i,j,k).Accumulator.Series .* Powertrain(i,j,k).Accumulator.Parallel .*...
                                       Cell(k).Cp);
+            
+            Powertrain(i,j,k).Capacity = Powertrain(i,j,k).Accumulator.Series .*...
+                                         Powertrain(i,j,k).Accumulator.Parallel.*...
+                                         Cell(k).VoltageMax .* Cell(k).Capacity ./ 1000;
         end
     end
 end
@@ -129,6 +134,10 @@ for i = 1 : length(Motor)
                         Powertrain(i,j,k).Color = 'b';
                     case 4
                         Powertrain(i,j,k).Color = 'y';
+                    case 5
+                        Powertrain(i,j,k).Color = 'c';
+                    case 6
+                        Powertrain(i,j,k).Color = 'm';
                 end
                 
                 switch Marker
@@ -201,7 +210,7 @@ for i = 1 : length(Motor)
     end
 end
 
-title('Cell Mass over Voltage Range')
+title('Cell Mass Over Voltage Range')
 xlim([100,600]);
 xlabel('Powertrain Voltage [V]')
 ylim([0,100]);
@@ -222,7 +231,7 @@ for i = 1 : length(Motor)
     end
 end
 
-title('Powertrain Mass over Voltage Range')
+title('Powertrain Mass Over Voltage Range')
 xlim([100,600]);
 xlabel('Powertrain Voltage [V]')
 ylim([50,150]);
@@ -243,11 +252,31 @@ for i = 1 : length(Motor)
     end
 end
 
-title('Cell Mass / Resistance Ratio over Voltage Range')
+title('Cell Mass / Resistance Ratio Over Voltage Range')
 xlim([100,600]);
 xlabel('Powertrain Voltage [V]')
 ylim([0,10]);
 ylabel('g / Ohm')
+
+figure(5)
+for i = 1 : length(Motor)
+    for j = 1 : length(Controller)
+        for k = 1 : length(Cell)
+            
+            if isempty(Powertrain(i,j,k).Flag)
+                plot(Powertrain(i,j,k).Accumulator.Voltage , Powertrain(i,j,k).Capacity);
+                hold on
+            end
+            
+        end
+    end
+end
+
+title('Accumulator Capacity Over Voltage Range')
+xlim([100,600]);
+xlabel('Powertrain Voltage [V]')
+ylim([0,10]);
+ylabel('Capacity [kWh]')
 
 clear i j k A B
 timeElapsed = toc
