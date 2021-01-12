@@ -80,36 +80,25 @@ for i = 1 : length(Motor)
             if Powertrain(i,j,k).Accumulator.PowerPeak < 0.9*Accumulator.PowerPeak 
                 Powertrain(i,j,k).Flag = "(4) Cells Cannot Supply Sufficient Peak Power";
                 continue
-            end   
-        end
-    end
-end
-
-return
-
-% Determine Cell Temp Change
-A = length(Controller) ; B = length(Cell);
-parfor i = 1 : length(Motor)
-    for j = 1 : A
-        for k = 1 : B
-            if isempty(Powertrain(i,j,k).Flag)
-                Powertrain(i,j,k).Temp = (10/6 .* 117.6./(floor(Powertrain(i,j,k).VRange./4.2).*4.2)).^2 .* (Cell(k).Resistance .*...
-                                      Powertrain(i,j,k).Series ./ Powertrain(i,j,k).Parallel) .* Endurance ./...
-                                      (Cell(k).Mass .* Powertrain(i,j,k).Series .* Powertrain(i,j,k).Parallel .*...
-                                      CellCp);
             end
+            Powertrain(i,j,k).Temp = (10/6 .* 117.6./(floor(Powertrain(i,j,k).Accumulator.Voltage./...
+                                      Powertrain(i,j,k).Cell.VoltageMax).*Powertrain(i,j,k).Cell.VoltageMax)).^2 .*...
+                                     (Cell(k).Resistance .* Powertrain(i,j,k).Accumulator.Series ./ ...
+                                      Powertrain(i,j,k).Accumulator.Parallel) .* EnduranceActionLoad ./ (Cell(k).Mass .*...
+                                      Powertrain(i,j,k).Accumulator.Series .* Powertrain(i,j,k).Accumulator.Parallel .*...
+                                      Cell(k).Cp);
         end
     end
 end
 
 %% Plotting Stuff
 figure(1)
-parfor i = 1 : length(Motor)
+for i = 1 : length(Motor)
     for j = 1 : length(Controller)
         for k = 1 : length(Cell)
             
             if isempty(Powertrain(i,j,k).Flag)
-                plot(Powertrain(i,j,k).VRange,Powertrain(i,j,k).Temp);
+                plot(Powertrain(i,j,k).Accumulator.Voltage,Powertrain(i,j,k).Temp);
                 hold on
             end
             
@@ -124,12 +113,12 @@ ylim([0,100]);
 ylabel('Endurance Temperature Change [C]')
 
 figure(2)
-parfor i = 1 : length(Motor)
+for i = 1 : length(Motor)
     for j = 1 : length(Controller)
         for k = 1 : length(Cell)
             
             if isempty(Powertrain(i,j,k).Flag)
-                plot(Powertrain(i,j,k).VRange,Powertrain(i,j,k).Accum.Mass);
+                plot(Powertrain(i,j,k).Accumulator.Voltage,Powertrain(i,j,k).Accumulator.Mass);
                 hold on
             end
             
@@ -144,13 +133,13 @@ ylim([0,100]);
 ylabel('Cell Mass [kg]')
 
 figure(3)
-parfor i = 1 : length(Motor)
+for i = 1 : length(Motor)
     for j = 1 : length(Controller)
         for k = 1 : length(Cell)
             
             if isempty(Powertrain(i,j,k).Flag)
-                plot(Powertrain(i,j,k).VRange,Powertrain(i,j,k).Accum.Mass + Powertrain(i,j,k).Motor.Mass +...
-                     Powertrain(i,j,k).Controller.Mass);
+                plot(Powertrain(i,j,k).Accumulator.Voltage,Powertrain(i,j,k).Accumulator.Mass +...
+                     Powertrain(i,j,k).Motor.Mass + Powertrain(i,j,k).Controller.Mass);
                 hold on
             end
             
@@ -165,12 +154,13 @@ ylim([50,150]);
 ylabel('Mass [kg]')
 
 figure(4)
-parfor i = 1 : length(Motor)
+for i = 1 : length(Motor)
     for j = 1 : length(Controller)
         for k = 1 : length(Cell)
             
             if isempty(Powertrain(i,j,k).Flag)
-                plot(Powertrain(i,j,k).VRange , Powertrain(i,j,k).Accum.Mass ./ (1000 .* Powertrain(i,j,k).Accum.Resistance));
+                plot(Powertrain(i,j,k).Accumulator.Voltage , Powertrain(i,j,k).Accumulator.Mass ./...
+                    (1000 .* Powertrain(i,j,k).Accumulator.Resistance));
                 hold on
             end
             
