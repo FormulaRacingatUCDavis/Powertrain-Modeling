@@ -124,43 +124,115 @@ for i = 1 : length(Motor)
         for k = 1 : length(Cell)
             
             if isempty(Powertrain(i,j,k).Flag)
-                Color = find(Cells == k);
-                Marker = find(Controllers == j);
+                Color = find(Motors == i);
+                Outline = find(Controllers == j);
+                Marker = find(Cells == k);
 
                 switch Color
                     case 1
-                        Powertrain(i,j,k).Color = 'r';
+                        Powertrain(i,j,k).Color = '#0072BD';
                     case 2
-                        Powertrain(i,j,k).Color = 'g';
+                        Powertrain(i,j,k).Color = '#D95319';
                     case 3
-                        Powertrain(i,j,k).Color = 'b';
+                        Powertrain(i,j,k).Color = '#EDB120';
                     case 4
-                        Powertrain(i,j,k).Color = 'y';
+                        Powertrain(i,j,k).Color = '#7E2F8E';
                     case 5
-                        Powertrain(i,j,k).Color = 'c';
+                        Powertrain(i,j,k).Color = '#77AC30';
                     case 6
-                        Powertrain(i,j,k).Color = 'm';
+                        Powertrain(i,j,k).Color = '#4DBEEE';
+                    case 7
+                        Powertrain(i,j,k).Color = '#A2142F';
+                    case 8
+                        Powertrain(i,j,k).Color = '#C60E0E';
+                    case 9
+                        Powertrain(i,j,k).Color = '#0A0C89';
+                    case 10
+                        Powertrain(i,j,k).Color = '#5E3509';
+                    case 11
+                        Powertrain(i,j,k).Color = '#185604';
+                    case 12
+                        Powertrain(i,j,k).Color = '#3BBA32';
+                    case 13
+                        Powertrain(i,j,k).Color = '#121214';
+                    case 14
+                        Powertrain(i,j,k).Color = '#EE2ACA';
+                    case 15
+                        Powertrain(i,j,k).Color = '#29DEBF';
+                    case 16
+                        Powertrain(i,j,k).Color = '#1AFE1A';
+                    case 17
+                        Powertrain(i,j,k).Color = '#FBFF00';
+                    case 18
+                        Powertrain(i,j,k).Color = '#1A0447';
+                    case 19
+                        Powertrain(i,j,k).Color = '#470404';
+                    case 20
+                        Powertrain(i,j,k).Color = '#6F7485';
+                end
+                
+                switch Outline
+                    case 1
+                        Powertrain(i,j,k).Outline = '#0072BD';
+                    case 2
+                        Powertrain(i,j,k).Outline = '#D95319';
+                    case 3
+                        Powertrain(i,j,k).Outline = '#EDB120';
+                    case 4
+                        Powertrain(i,j,k).Outline = '#7E2F8E';
+                    case 5
+                        Powertrain(i,j,k).Outline = '#77AC30';
+                    case 6
+                        Powertrain(i,j,k).Outline = '#4DBEEE';
+                    case 7
+                        Powertrain(i,j,k).Outline = '#A2142F';
+                    case 8
+                        Powertrain(i,j,k).Outline = '#C60E0E';
+                    case 9
+                        Powertrain(i,j,k).Outline = '#0A0C89';
+                    case 10
+                        Powertrain(i,j,k).Outline = '#5E3509';
+                    case 11
+                        Powertrain(i,j,k).Outline = '#185604';
+                    case 12
+                        Powertrain(i,j,k).Outline = '#3BBA32';
+                    case 13
+                        Powertrain(i,j,k).Outline = '#121214';
+                    case 14
+                        Powertrain(i,j,k).Outline = '#EE2ACA';
+                    case 15
+                        Powertrain(i,j,k).Outline = '#29DEBF';
+                    case 16
+                        Powertrain(i,j,k).Outline = '#1AFE1A';
+                    case 17
+                        Powertrain(i,j,k).Outline = '#FBFF00';
+                    case 18
+                        Powertrain(i,j,k).Outline = '#1A0447';
+                    case 19
+                        Powertrain(i,j,k).Outline = '#470404';
+                    case 20
+                        Powertrain(i,j,k).Outline = '#6F7485';
                 end
                 
                 switch Marker
                     case 1
                         Powertrain(i,j,k).Marker = 'o';
                     case 2
-                        Powertrain(i,j,k).Marker = '+';
-                    case 3
-                        Powertrain(i,j,k).Marker = '*';
-                    case 4
-                        Powertrain(i,j,k).Marker = '.';
-                    case 5
-                        Powertrain(i,j,k).Marker = 'x';
-                    case 6
                         Powertrain(i,j,k).Marker = 'square';
-                    case 7
+                    case 3
                         Powertrain(i,j,k).Marker = 'diamond';
-                    case 8
+                    case 4
                         Powertrain(i,j,k).Marker = 'pentagram';
-                    case 9
+                    case 5
                         Powertrain(i,j,k).Marker = 'hexagram';
+                    case 6
+                        Powertrain(i,j,k).Marker = '+';
+                    case 7
+                        Powertrain(i,j,k).Marker = '*';
+                    case 8
+                        Powertrain(i,j,k).Marker = '.';
+                    case 9
+                        Powertrain(i,j,k).Marker = 'x';
                     case 10
                         Powertrain(i,j,k).Marker = '^';
                     case 11
@@ -177,13 +249,13 @@ for i = 1 : length(Motor)
 end
 
 figure(1)
-for p = 1:16
+for p = 1:9
     
-    subplot(4,4,p)
-    col = rem(p-1,4)+1;
-    row = ceil(p/4);
+    ax(p) = subplot(3,3,p);
+    col = rem(p-1,3)+1;
+    row = ceil(p/3);
     
-    label = [];
+    labelx = []; labely = [];
 
     for i = 1 : length(Motor)
         for j = 1 : length(Controller)
@@ -192,46 +264,41 @@ for p = 1:16
                 if isempty(Powertrain(i,j,k).Flag)
                     switch col
                         case 1
-                            x = Powertrain(i,j,k).Capacity;
-                            xlab = 'Capacity';
-                        case 2
-                            x = Powertrain(i,j,k).PowerPeak;
-                            xlab = 'Peak Power';
-                        case 3
-                            x = Powertrain(i,j,k).Accumulator.Mass + Motor(i).Mass + Controller(j).Mass;
-                            xlab = 'Powertrain Mass';
-                        case 4
                             x = Powertrain(i,j,k).Temp;
-                            xlab = 'Temperature Change';
+                            xlab = 'Temperature Change [C]';
+                        case 2
+                            x = Powertrain(i,j,k).Accumulator.Mass + Motor(i).Mass + Controller(j).Mass;
+                            xlab = 'Powertrain Mass [kg]';
+                        case 3
+                            x = Powertrain(i,j,k).PowerPeak;
+                            xlab = 'Peak Power [kW]';
                     end
 
                     switch row
                         case 1
-                            y = Powertrain(i,j,k).Capacity;
-                            ylab = 'Capacity';
+                            y = Powertrain(i,j,k).Accumulator.Mass + Motor(i).Mass + Controller(j).Mass;
+                            ylab = 'Powertrain Mass [kg]';
                         case 2
                             y = Powertrain(i,j,k).PowerPeak;
-                            ylab = 'Peak Power';
+                            ylab = 'Peak Power [kW]';
                         case 3
-                            y = Powertrain(i,j,k).Accumulator.Mass + Motor(i).Mass + Controller(j).Mass;
-                            ylab = 'Powertrain Mass';
-                        case 4
-                            y = Powertrain(i,j,k).Temp;
-                            ylab = 'Temperature Change';
+                            y = Powertrain(i,j,k).Capacity;
+                            ylab = 'Capacity [kWh]';
+                            
                     end
 
                     if isempty(Powertrain(i,j,k).Flag)
-                        scatter(x,y);
+                        scatter(x,y,Powertrain(i,j,k).Marker,'MarkerFaceColor',Powertrain(i,j,k).Color,'MarkerEdgeColor',Powertrain(i,j,k).Outline);
                         hold on
                     end
                     
-                    if col == 1 && isempty(label)
+                    if col == 1 && isempty(labely)
                         ylabel(ylab);
-                        label = 1;
+                        labely = 1;
                     end
-                    if row == 4 && isempty(label)
+                    if row == 3 && isempty(labelx)
                         xlabel(xlab);
-                        label = 1;
+                        labelx = 1;
                     end
 
                 end
@@ -241,7 +308,17 @@ for p = 1:16
     end
 end
 
-clear i j k A B
+for i = 1:3
+    linkaxes(ax(i:3:9),'x');
+    linkaxes(ax(rem(i-1,3)+1),'y');
+end
+
+hold off
+
+clear i j k A B x y p row col
+clear labelx labely xlab ylab
+clear Motors Controllers Cells
+clear Color Outline Marker
 timeElapsed = toc
 %% Local Functions   
 function [Cell, Controller, Motor] = SpreadsheetImport()
