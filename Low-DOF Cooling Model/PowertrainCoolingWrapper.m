@@ -34,7 +34,7 @@ rng('default') % For Reproducability in Development
 
 
 %% Drive Cycle Processing
-Request.TorqueScaling = 100 ./ 60 .* 0.85; % Percent of Total Torque During Endurance []
+Request.TorqueScaling = 100 ./ 60 * 2; % Percent of Total Torque During Endurance []
 
 Data(1) = RequestImport( 'Cropped_FE6_Endurance_Stint_1.csv' );
 Data(2) = RequestImport( 'Cropped_FE6_Endurance_Stint_2.csv' );
@@ -190,6 +190,7 @@ Controller.Electrical.Efficiency = 89 / 100; % Controller Efficiency [ ]
 % .0022 * 96 
 % 2.2932
 Controller.Thermal.Cp = 2.2932 * 896 + 753 * .0022 * 96;
+Controller.TorqueScaling = Request.TorqueScaling;
 
 
 %% Chassis Characterization
@@ -209,6 +210,7 @@ end
 Parameter.Accumulator = Accumulator;
 Parameter.Motor = Motor;
 Parameter.Controller = Controller;
+
 
 clear Fields i 
 
