@@ -13,20 +13,28 @@ Accumulator.Capacity  = 6.7 .* 1000; % Pack Energy Capacity [kWh -> Wh]
 Accumulator.PowerPeak = 65  .* 1000; % Required Peak Power [kW -> W]
 
 EnduranceActionLoad    = 22156741.88; % Constant from endurance, sum of Current^2 times each time step
+RMSCurrent = 190;
+TimeEndurance = 1772;
 
 Cell(1).Cp             = 0.902      ; % Lithium ion cell specific heat capacity [J/g-K]
-
 %% Powertrain Configuration Sweeping
 % Determine feasible voltage range for each Motor / Controller
 % combination, then sweep these voltage ranges for every Cell, in order to
 % find the Change in Temperature vs. Voltage for every Motor / Controller /
 % Cell combination
 
-Powertrain = struct( 'Motor'      , [] , ...
-                     'Controller' , [] , ...
-                     'Cell'       , [] , ...
-                     'Accumulator', [] );
+Powertrain = struct( 'Motor'       , [] , ...
+                     'Controller'  , [] , ...
+                     'Cell'        , [] , ...
+                     'Accumulator' , [] );
 Powertrain( length(Motor), length(Controller), length(Cell) ).Motor = [];
+
+Flag = struct('Info'                , 0 , ...
+              'ControllerPower'     , 0 , ...
+              'MotorPower'          , 0 , ...
+              'IncompatibleVoltage' , 0 , ...
+              'CellsPower' , []);
+              
 
 for i = 1 : length(Motor)
     for j = 1 : length(Controller)
@@ -43,16 +51,20 @@ for i = 1 : length(Motor)
             %%% Initial Compatibility Parsing 
             if AnyFieldNaN( Powertrain(i,j,k) )
                 Powertrain(i,j,k).Flag = "(0) Insufficient Information";
+                Flag.Info = Flag.Info + 1;
                 continue
             elseif Controller(j).Voltage < Accumulator.PowerPeak / Controller(j).CurrentMax
                 Powertrain(i,j,k).Flag = "(1) Controller Peak Power Not Sufficient";
+                Flag.ControllerPower = Flag.ControllerPower + 1;
                 continue
             elseif Motor(i).Voltage < Accumulator.PowerPeak / Motor(i).CurrentMax
                 Powertrain(i,j,k).Flag = "(2) Motor Peak Power Not Sufficient";
+                Flag.MotorPower = Flag.MotorPower + 1;
                 continue
             elseif (Controller(j).Voltage < Accumulator.PowerPeak / Motor(i).CurrentMax) || ...
                    (Motor(i).Voltage < Accumulator.PowerPeak / Controller(j).CurrentMax)
                 Powertrain(i,j,k).Flag = "(3) Incompatible Motor & Controller Voltages";
+                Flag.IncompatibleVoltage = Flag.IncompatibleVoltage + 1;
                 continue
             end
 
@@ -79,54 +91,50 @@ for i = 1 : length(Motor)
             
             if Powertrain(i,j,k).Accumulator.PowerPeak < 0.9*Accumulator.PowerPeak 
                 Powertrain(i,j,k).Flag = "(4) Cells Cannot Supply Sufficient Peak Power";
+                Flag.CellsPower = Flag.CellsPower + 1;
                 continue
             end
             
-            Powertrain(i,j,k).Temp = (10/6 .* 117.6./(floor(Powertrain(i,j,k).Accumulator.Voltage./...
-                                      Powertrain(i,j,k).Cell.VoltageMax).*Powertrain(i,j,k).Cell.VoltageMax)).^2 .*...
-                                     (Cell(k).Resistance .* Powertrain(i,j,k).Accumulator.Series ./ ...
-                                      Powertrain(i,j,k).Accumulator.Parallel) .* EnduranceActionLoad ./ (Cell(k).Mass .*...
-                                      Powertrain(i,j,k).Accumulator.Series .* Powertrain(i,j,k).Accumulator.Parallel .*...
-                                      Cell(k).Cp);
-            
+            %%% Calculate Voltage Swept Outputs
+%             Powertrain(i,j,k).Temp = (10/6 .* 117.6./(floor(Powertrain(i,j,k).Accumulator.Voltage./...
+%                                       Powertrain(i,j,k).Cell.VoltageMax).*Powertrain(i,j,k).Cell.VoltageMax)).^2 .*...
+%                                      (Cell(k).Resistance .* Powertrain(i,j,k).Accumulator.Series ./ ...
+%                                       Powertrain(i,j,k).Accumulator.Parallel) .* EnduranceActionLoad ./...
+%                                      (Powertrain(i,j,k).Accumulator.Mass .* 1000 .* Cell(k).Cp);
+            Powertrain(i,j,k).Temp = (RMSCurrent .* 117.6 ./ Powertrain(i,j,k).Accumulator.Voltage).^2 .* Cell(k).Resistance .*...
+                                      Powertrain(i,j,k).Accumulator.Series ./ Powertrain(i,j,k).Accumulator.Parallel .*...
+                                      TimeEndurance ./ (Powertrain(i,j,k).Accumulator.Mass .* 1000 .* Cell(k).Cp);
             Powertrain(i,j,k).Capacity = Powertrain(i,j,k).Accumulator.Series .*...
                                          Powertrain(i,j,k).Accumulator.Parallel.*...
                                          Cell(k).VoltageMax .* Cell(k).Capacity ./ 1000;
             Powertrain(i,j,k).PowerPeak = min(Powertrain(i,j,k).Capacity ./ Cell(k).Capacity .* Cell(k).CurrentMax , Controller(j).PowerPeak);
             Powertrain(i,j,k).PowerPeak = min(Powertrain(i,j,k).PowerPeak , Motor(k).PowerPeak);
+            
+            Powertrain(i,j,k).Mass = Powertrain(i,j,k).Accumulator.Mass + Motor(i).Mass + Controller(j).Mass;
         end
     end
 end
 
 %% Plotting Stuff
-Motors = [];
-Controllers = [];
 Cells = [];
 for i = 1 : length(Motor)
     for j = 1 : length(Controller)
         for k = 1 : length(Cell)
         
         if isempty(Powertrain(i,j,k).Flag)
-        Motors = [Motors,i];
-        Controllers = [Controllers,j];
-        Cells = [Cells,k];
+            Cells = unique([Cells,k]);
         end
         
         end
     end
 end
-Motors = unique(Motors);
-Controllers = unique(Controllers);
-Cells = unique(Cells);
 
 for i = 1 : length(Motor)
     for j = 1 : length(Controller)
         for k = 1 : length(Cell)
             
             if isempty(Powertrain(i,j,k).Flag)
-                Color = find(Motors == i);
-                Outline = find(Controllers == j);
-                Marker = find(Cells == k);
+                Color = find(Cells == k);
 
                 switch Color
                     case 1
@@ -171,77 +179,6 @@ for i = 1 : length(Motor)
                         Powertrain(i,j,k).Color = '#6F7485';
                 end
                 
-                switch Outline
-                    case 1
-                        Powertrain(i,j,k).Outline = '#0072BD';
-                    case 2
-                        Powertrain(i,j,k).Outline = '#D95319';
-                    case 3
-                        Powertrain(i,j,k).Outline = '#EDB120';
-                    case 4
-                        Powertrain(i,j,k).Outline = '#7E2F8E';
-                    case 5
-                        Powertrain(i,j,k).Outline = '#77AC30';
-                    case 6
-                        Powertrain(i,j,k).Outline = '#4DBEEE';
-                    case 7
-                        Powertrain(i,j,k).Outline = '#A2142F';
-                    case 8
-                        Powertrain(i,j,k).Outline = '#C60E0E';
-                    case 9
-                        Powertrain(i,j,k).Outline = '#0A0C89';
-                    case 10
-                        Powertrain(i,j,k).Outline = '#5E3509';
-                    case 11
-                        Powertrain(i,j,k).Outline = '#185604';
-                    case 12
-                        Powertrain(i,j,k).Outline = '#3BBA32';
-                    case 13
-                        Powertrain(i,j,k).Outline = '#121214';
-                    case 14
-                        Powertrain(i,j,k).Outline = '#EE2ACA';
-                    case 15
-                        Powertrain(i,j,k).Outline = '#29DEBF';
-                    case 16
-                        Powertrain(i,j,k).Outline = '#1AFE1A';
-                    case 17
-                        Powertrain(i,j,k).Outline = '#FBFF00';
-                    case 18
-                        Powertrain(i,j,k).Outline = '#1A0447';
-                    case 19
-                        Powertrain(i,j,k).Outline = '#470404';
-                    case 20
-                        Powertrain(i,j,k).Outline = '#6F7485';
-                end
-                
-                switch Marker
-                    case 1
-                        Powertrain(i,j,k).Marker = 'o';
-                    case 2
-                        Powertrain(i,j,k).Marker = 'square';
-                    case 3
-                        Powertrain(i,j,k).Marker = 'diamond';
-                    case 4
-                        Powertrain(i,j,k).Marker = 'pentagram';
-                    case 5
-                        Powertrain(i,j,k).Marker = 'hexagram';
-                    case 6
-                        Powertrain(i,j,k).Marker = '+';
-                    case 7
-                        Powertrain(i,j,k).Marker = '*';
-                    case 8
-                        Powertrain(i,j,k).Marker = '.';
-                    case 9
-                        Powertrain(i,j,k).Marker = 'x';
-                    case 10
-                        Powertrain(i,j,k).Marker = '^';
-                    case 11
-                        Powertrain(i,j,k).Marker = 'v';
-                    case 12
-                        Powertrain(i,j,k).Marker = '>';
-                    case 13
-                        Powertrain(i,j,k).Marker = '<';
-                end
             end
             
         end
@@ -251,75 +188,85 @@ end
 figure(1)
 for p = 1:9
     
-    ax(p) = subplot(3,3,p);
+    a = tril(ones(3,3))';
+    
     col = rem(p-1,3)+1;
     row = ceil(p/3);
     
-    labelx = []; labely = [];
+    if a(p)
+        ax(p) = subplot(3,3,p);
 
-    for i = 1 : length(Motor)
-        for j = 1 : length(Controller)
-            for k = 1 : length(Cell)
-
-                if isempty(Powertrain(i,j,k).Flag)
-                    switch col
-                        case 1
-                            x = Powertrain(i,j,k).Temp;
-                            xlab = 'Temperature Change [C]';
-                        case 2
-                            x = Powertrain(i,j,k).Accumulator.Mass + Motor(i).Mass + Controller(j).Mass;
-                            xlab = 'Powertrain Mass [kg]';
-                        case 3
-                            x = Powertrain(i,j,k).PowerPeak;
-                            xlab = 'Peak Power [kW]';
-                    end
-
-                    switch row
-                        case 1
-                            y = Powertrain(i,j,k).Accumulator.Mass + Motor(i).Mass + Controller(j).Mass;
-                            ylab = 'Powertrain Mass [kg]';
-                        case 2
-                            y = Powertrain(i,j,k).PowerPeak;
-                            ylab = 'Peak Power [kW]';
-                        case 3
-                            y = Powertrain(i,j,k).Capacity;
-                            ylab = 'Capacity [kWh]';
-                            
-                    end
+        labelx = []; labely = [];
+        
+        for i = 1 : length(Motor)
+            for j = 1 : length(Controller)
+                for k = 1 : length(Cell)
 
                     if isempty(Powertrain(i,j,k).Flag)
-                        scatter(x,y,Powertrain(i,j,k).Marker,'MarkerFaceColor',Powertrain(i,j,k).Color,'MarkerEdgeColor',Powertrain(i,j,k).Outline);
-                        hold on
-                    end
-                    
-                    if col == 1 && isempty(labely)
-                        ylabel(ylab);
-                        labely = 1;
-                    end
-                    if row == 3 && isempty(labelx)
-                        xlabel(xlab);
-                        labelx = 1;
+                        switch col
+                            case 1
+                                x = Powertrain(i,j,k).Temp;
+                                xlab = 'Temperature Change [C]';
+                            case 2
+                                x = Powertrain(i,j,k).Accumulator.Mass + Motor(i).Mass + Controller(j).Mass;
+                                xlab = 'Powertrain Mass [kg]';
+                            case 3
+                                x = Powertrain(i,j,k).PowerPeak;
+                                xlab = 'Peak Power [kW]';
+                        end
+
+                        switch row
+                            case 1
+                                y = Powertrain(i,j,k).Accumulator.Mass + Motor(i).Mass + Controller(j).Mass;
+                                ylab = 'Powertrain Mass [kg]';
+                            case 2
+                                y = Powertrain(i,j,k).PowerPeak;
+                                ylab = 'Peak Power [kW]';
+                            case 3
+                                y = Powertrain(i,j,k).Capacity;
+                                ylab = 'Capacity [kWh]';
+
+                        end
+
+                        if isempty(Powertrain(i,j,k).Flag)
+                            s = scatter(x,y,'.','MarkerFaceColor',Powertrain(i,j,k).Color);
+                            
+                            s.DataTipTemplate.DataTipRows(end+1) = Powertrain(i,j,k).Motor.Model;
+                            s.DataTipTemplate.DataTipRows(end+1) = Powertrain(i,j,k).Controller.Model;
+                            s.DataTipTemplate.DataTipRows(end+1) = Powertrain(i,j,k).Cell.Model;
+                            
+                            hold on
+                        end
+
+                        if col == 1 && isempty(labely)
+                            ylabel(ylab);
+                            labely = 1;
+                        end
+                        if row == 3 && isempty(labelx)
+                            xlabel(xlab);
+                            labelx = 1;
+                        end
+
                     end
 
                 end
-
             end
         end
     end
 end
 
 for i = 1:3
-    linkaxes(ax(i:3:9),'x');
-    linkaxes(ax(rem(i-1,3)+1),'y');
+    linkaxes(ax(nonzeros([i*3-2:i*3] .* flip(a(:,4-i)'))) ,'x');
+    linkaxes(ax(nonzeros([i:3:9]' .* a(:,i))) ,'y');
 end
 
 hold off
 
-clear i j k A B x y p row col
+clear i j k A B x y p row col a
 clear labelx labely xlab ylab
 clear Motors Controllers Cells
 clear Color Outline Marker
-timeElapsed = toc
+timeElapsed = toc;
 %% Local Functions   
 function [Cell, Controller, Motor] = SpreadsheetImport()
     % Import Spreadsheets
