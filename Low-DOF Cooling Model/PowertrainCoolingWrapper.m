@@ -24,15 +24,17 @@ clear fdir diridx wdir
 rng('default') % For Reproducability in Development
 
 %% TO DO
-% Entropic heat as a function of C rate (curve fitting?)
-% Realistic fan velocity accounting for constricted path
-% Characterize thermal pad compression
-% Resistance through spot welds
-% "COLLECTOR RESISTANCES" are in wrong units (W-m^2/K)
+% -Entropic heat as a function of C rate (curve fitting?)
+% -Realistic fan velocity accounting for constricted path
+% -Characterize thermal pad compression
+% -Resistance through spot welds
+% -"COLLECTOR RESISTANCES" are in wrong units (W-m^2/K)
+% -No sensitivity to internal cell conductivities... are we modelling this
+%  right? Heat in the center?
 
 
 %% Drive Cycle Processing
-Request.TorqueScaling = 100 ./ 60 .* 0.9; % Percent of Total Torque During Endurance []
+Request.TorqueScaling = 100 ./ 60 * 2; % Percent of Total Torque During Endurance []
 
 Data(1) = RequestImport( 'Cropped_FE6_Endurance_Stint_1.csv' );
 Data(2) = RequestImport( 'Cropped_FE6_Endurance_Stint_2.csv' );
@@ -137,9 +139,9 @@ Accumulator.Collector.Material.k = [ Material.Copper.k , Material.Tflex.k];
 
 
 Accumulator.Collector.Dimensions.Thickness = [40 / (39370), ... % Busbar Thickness
-                                                10 / (39370)]; % Thermal Pad Thickness, [mils -> m]
-Accumulator.Collector.Dimensions.Area = [0.02935478, ... % Busbar Area
-                                                0.04483862]; % Thermal Pad Area
+                                                34 / (39370)]; % Thermal Pad Thickness, [mils -> m]
+Accumulator.Collector.Dimensions.Area = [0.030 * 5, ... % Busbar Area
+                                                0.045 * 5]; % Thermal Pad Area
 
 Accumulator = CollectorResistanceCalculations( Accumulator ); % See Local Functions
 
@@ -188,6 +190,7 @@ Controller.Electrical.Efficiency = 89 / 100; % Controller Efficiency [ ]
 % .0022 * 96 
 % 2.2932
 Controller.Thermal.Cp = 2.2932 * 896 + 753 * .0022 * 96;
+Controller.TorqueScaling = Request.TorqueScaling;
 
 
 %% Chassis Characterization
@@ -208,11 +211,12 @@ Parameter.Accumulator = Accumulator;
 Parameter.Motor = Motor;
 Parameter.Controller = Controller;
 
+
 clear Fields i 
 
 %% Run Simulink Model
 sim('PowertrainCoolingModel.slx');
-plot(ans.Thermal.PosTab)
+plot(ans.Thermal.PosTab);
 
 
 %% Local Functions
@@ -354,7 +358,7 @@ function Accumulator = CollectorResistanceCalculations( Accumulator )
             Accumulator.Collector.Dimensions.Area(Accumulator.Collector.Dimensions.Laminate(i));
 
     end
-    Accumulator.Collector.Thermal.Resistance;
+    Accumulator.Collector.Thermal.Resistance
 end
 
 function Accumulator = AccumulatorFinCalculations( Accumulator )
