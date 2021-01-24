@@ -11,12 +11,14 @@ clc; clear; close all;
 %% Constraints and Constants
 Accumulator.Capacity  = 6.7 .* 1000; % Pack Energy Capacity [kWh -> Wh]
 Accumulator.PowerPeak = 65  .* 1000; % Required Peak Power [kW -> W]
+Accumulator.Rejection = 2000;        % Maximum Possible Cooling [W]
+Accumulator.Mass      = 36.7;        % Max allowable cell mass [kg]
 
-EnduranceActionLoad    = 22156741.88; % Constant from endurance, sum of Current^2 times each time step
-RMSCurrent = 190;
-TimeEndurance = 1772;
+EnduranceActionLoad   = 22156741.88; % Constant from endurance, sum of Current^2 times each time step
+TempAmbient           = 35;
+EnduranceTime         = 1943;
 
-Cell(1).Cp             = 0.902      ; % Lithium ion cell specific heat capacity [J/g-K]
+Cell(1).Cp            = 0.902      ; % Lithium ion cell specific heat capacity [J/g-K]
 %% Powertrain Configuration Sweeping
 % Determine feasible voltage range for each Motor / Controller
 % combination, then sweep these voltage ranges for every Cell, in order to
@@ -33,7 +35,9 @@ Flag = struct('Info'                , 0 , ...
               'ControllerPower'     , 0 , ...
               'MotorPower'          , 0 , ...
               'IncompatibleVoltage' , 0 , ...
-              'CellsPower' , []);
+              'CellsPower'          , 0 , ...
+              'Heat'                , 0 , ...
+              'Capacity'            , 0);
               
 
 for i = 1 : length(Motor)
@@ -79,38 +83,49 @@ for i = 1 : length(Motor)
             
             Powertrain(i,j,k).Accumulator.Parallel = round( Accumulator.Capacity ./ ...
                 (Powertrain(i,j,k).Accumulator.Series .* Cell(k).Capacity .* Cell(k).VoltageMax));
-            
+
             Powertrain(i,j,k).Accumulator.Resistance = Powertrain(i,j,k).Accumulator.Series ./ ...
                 Powertrain(i,j,k).Accumulator.Parallel .* Cell(k).Resistance;
             
-            Powertrain(i,j,k).Accumulator.Mass = Powertrain(i,j,k).Accumulator.Series .* ...
+            Powertrain(i,j,k).Accumulator.Mass = Powertrain(i,j,k).Accumulator.Series .* ...    % Total Cell Mass [kg]
                 Powertrain(i,j,k).Accumulator.Parallel .* Cell(k).Mass ./ 1000;
             
             Powertrain(i,j,k).Accumulator.PowerPeak = Powertrain(i,j,k).Accumulator.Parallel .* ...
-                Powertrain(i,j,k).Accumulator.Series .* Cell(k).CurrentMax .* Cell(k).VoltageMax;
-            
-            if Powertrain(i,j,k).Accumulator.PowerPeak < 0.9*Accumulator.PowerPeak 
-                Powertrain(i,j,k).Flag = "(4) Cells Cannot Supply Sufficient Peak Power";
-                Flag.CellsPower = Flag.CellsPower + 1;
-                continue
-            end
-            
+                Powertrain(i,j,k).Accumulator.Series .* Cell(k).CurrentMax .* Cell(k).VoltageMax ./ 1000;
+         
             %%% Calculate Voltage Swept Outputs
-%             Powertrain(i,j,k).Temp = (10/6 .* 117.6./(floor(Powertrain(i,j,k).Accumulator.Voltage./...
-%                                       Powertrain(i,j,k).Cell.VoltageMax).*Powertrain(i,j,k).Cell.VoltageMax)).^2 .*...
-%                                      (Cell(k).Resistance .* Powertrain(i,j,k).Accumulator.Series ./ ...
-%                                       Powertrain(i,j,k).Accumulator.Parallel) .* EnduranceActionLoad ./...
-%                                      (Powertrain(i,j,k).Accumulator.Mass .* 1000 .* Cell(k).Cp);
-            Powertrain(i,j,k).Temp = (RMSCurrent .* 117.6 ./ Powertrain(i,j,k).Accumulator.Voltage).^2 .* Cell(k).Resistance .*...
-                                      Powertrain(i,j,k).Accumulator.Series ./ Powertrain(i,j,k).Accumulator.Parallel .*...
-                                      TimeEndurance ./ (Powertrain(i,j,k).Accumulator.Mass .* 1000 .* Cell(k).Cp);
-            Powertrain(i,j,k).Capacity = Powertrain(i,j,k).Accumulator.Series .*...
-                                         Powertrain(i,j,k).Accumulator.Parallel.*...
+            Powertrain(i,j,k).Temp = (10/6 .* 117.6./(floor(Powertrain(i,j,k).Accumulator.Voltage./...
+                                      Powertrain(i,j,k).Cell.VoltageMax).*Powertrain(i,j,k).Cell.VoltageMax)).^2 .*...
+                                     (Cell(k).Resistance .* Powertrain(i,j,k).Accumulator.Series ./ ...
+                                      Powertrain(i,j,k).Accumulator.Parallel) .* EnduranceActionLoad ./...
+                                     (Powertrain(i,j,k).Accumulator.Mass .* 1000 .* Cell(k).Cp);
+            Powertrain(i,j,k).Rejection = (Powertrain(i,j,k).Temp + TempAmbient - 60) .* (Powertrain(i,j,k).Accumulator.Mass .*...
+                                           1000 .* Cell(k).Cp) ./ EnduranceTime;
+                                       
+            Powertrain(i,j,k).Capacity = Powertrain(i,j,k).Accumulator.Series .* Powertrain(i,j,k).Accumulator.Parallel .*...
                                          Cell(k).VoltageMax .* Cell(k).Capacity ./ 1000;
-            Powertrain(i,j,k).PowerPeak = min(Powertrain(i,j,k).Capacity ./ Cell(k).Capacity .* Cell(k).CurrentMax , Controller(j).PowerPeak);
+                                       
+            Powertrain(i,j,k).PowerPeak = min(Powertrain(i,j,k).Accumulator.PowerPeak , Controller(j).PowerPeak);
             Powertrain(i,j,k).PowerPeak = min(Powertrain(i,j,k).PowerPeak , Motor(k).PowerPeak);
             
             Powertrain(i,j,k).Mass = Powertrain(i,j,k).Accumulator.Mass + Motor(i).Mass + Controller(j).Mass;
+            
+            %%% Further filtering of specific Voltages
+            Powertrain(i,j,k).Pass = Powertrain(i,j,k).Capacity  > Accumulator.Capacity/1000 &...    % Pack Capacity
+                                     Powertrain(i,j,k).Rejection < Accumulator.Rejection &...   % Heat Rejection
+                                     Powertrain(i,j,k).PowerPeak > Accumulator.PowerPeak/1000 &...  % Peak Power
+                                     Powertrain(i,j,k).Accumulator.Mass < Accumulator.Mass;         % Cell Mass
+            
+            Powertrain(i,j,k).Rejection              = Powertrain(i,j,k).Rejection(Powertrain(i,j,k).Pass);
+            Powertrain(i,j,k).Capacity               = Powertrain(i,j,k).Capacity(Powertrain(i,j,k).Pass);
+            Powertrain(i,j,k).PowerPeak              = Powertrain(i,j,k).PowerPeak(Powertrain(i,j,k).Pass);
+            Powertrain(i,j,k).Mass                   = Powertrain(i,j,k).Mass(Powertrain(i,j,k).Pass);
+            Powertrain(i,j,k).Accumulator.Mass       = Powertrain(i,j,k).Accumulator.Mass(Powertrain(i,j,k).Pass);
+            Powertrain(i,j,k).Accumulator.Voltage    = Powertrain(i,j,k).Accumulator.Voltage(Powertrain(i,j,k).Pass);
+            Powertrain(i,j,k).Accumulator.Series     = Powertrain(i,j,k).Accumulator.Series(Powertrain(i,j,k).Pass);
+            Powertrain(i,j,k).Accumulator.Parallel   = Powertrain(i,j,k).Accumulator.Parallel(Powertrain(i,j,k).Pass);
+            Powertrain(i,j,k).Accumulator.Resistance = Powertrain(i,j,k).Accumulator.Resistance(Powertrain(i,j,k).Pass);
+            
         end
     end
 end
@@ -138,33 +153,33 @@ for i = 1 : length(Motor)
 
                 switch Color
                     case 1
-                        Powertrain(i,j,k).Color = '#0072BD';
+                        Powertrain(i,j,k).Color = '#0072BD';    % Sky Blue
                     case 2
-                        Powertrain(i,j,k).Color = '#D95319';
+                        Powertrain(i,j,k).Color = '#D95319';    % Orange
                     case 3
-                        Powertrain(i,j,k).Color = '#EDB120';
+                        Powertrain(i,j,k).Color = '#EDB120';    % Yellow
                     case 4
-                        Powertrain(i,j,k).Color = '#7E2F8E';
+                        Powertrain(i,j,k).Color = '#7E2F8E';    % Purple
                     case 5
-                        Powertrain(i,j,k).Color = '#77AC30';
+                        Powertrain(i,j,k).Color = '#77AC30';    % Green Apple
                     case 6
-                        Powertrain(i,j,k).Color = '#4DBEEE';
+                        Powertrain(i,j,k).Color = '#4DBEEE';    % Baby Blue
                     case 7
-                        Powertrain(i,j,k).Color = '#A2142F';
+                        Powertrain(i,j,k).Color = '#A2142F';    % Fuschia
                     case 8
-                        Powertrain(i,j,k).Color = '#C60E0E';
+                        Powertrain(i,j,k).Color = '#C60E0E';    % Red
                     case 9
-                        Powertrain(i,j,k).Color = '#0A0C89';
+                        Powertrain(i,j,k).Color = '#0A0C89';    % Cobalt Blue
                     case 10
-                        Powertrain(i,j,k).Color = '#5E3509';
+                        Powertrain(i,j,k).Color = '#5E3509';    % Brown
                     case 11
-                        Powertrain(i,j,k).Color = '#185604';
+                        Powertrain(i,j,k).Color = '#185604';    % Forest Green
                     case 12
-                        Powertrain(i,j,k).Color = '#3BBA32';
+                        Powertrain(i,j,k).Color = '#3BBA32';    % Green Screen
                     case 13
-                        Powertrain(i,j,k).Color = '#121214';
+                        Powertrain(i,j,k).Color = '#121214';    % Black
                     case 14
-                        Powertrain(i,j,k).Color = '#EE2ACA';
+                        Powertrain(i,j,k).Color = '#EE2ACA';    % Hot Pink
                     case 15
                         Powertrain(i,j,k).Color = '#29DEBF';
                     case 16
@@ -205,10 +220,10 @@ for p = 1:9
                     if isempty(Powertrain(i,j,k).Flag)
                         switch col
                             case 1
-                                x = Powertrain(i,j,k).Temp;
-                                xlab = 'Temperature Change [C]';
+                                x = Powertrain(i,j,k).Rejection;
+                                xlab = 'Required Heat Rejection [W]';
                             case 2
-                                x = Powertrain(i,j,k).Accumulator.Mass + Motor(i).Mass + Controller(j).Mass;
+                                x = Powertrain(i,j,k).Mass;
                                 xlab = 'Powertrain Mass [kg]';
                             case 3
                                 x = Powertrain(i,j,k).PowerPeak;
@@ -217,7 +232,7 @@ for p = 1:9
 
                         switch row
                             case 1
-                                y = Powertrain(i,j,k).Accumulator.Mass + Motor(i).Mass + Controller(j).Mass;
+                                y = Powertrain(i,j,k).Mass;
                                 ylab = 'Powertrain Mass [kg]';
                             case 2
                                 y = Powertrain(i,j,k).PowerPeak;
@@ -228,15 +243,13 @@ for p = 1:9
 
                         end
 
-                        if isempty(Powertrain(i,j,k).Flag)
-                            s = scatter(x,y,'.','MarkerFaceColor',Powertrain(i,j,k).Color);
-                            
-                            s.DataTipTemplate.DataTipRows(end+1) = Powertrain(i,j,k).Motor.Model;
-                            s.DataTipTemplate.DataTipRows(end+1) = Powertrain(i,j,k).Controller.Model;
-                            s.DataTipTemplate.DataTipRows(end+1) = Powertrain(i,j,k).Cell.Model;
-                            
-                            hold on
-                        end
+                        s = scatter(x,y,'.','MarkerEdgeColor',Powertrain(i,j,k).Color);
+
+                        s.DataTipTemplate.DataTipRows(end+1) = Powertrain(i,j,k).Motor.Model;
+                        s.DataTipTemplate.DataTipRows(end+1) = Powertrain(i,j,k).Controller.Model;
+                        s.DataTipTemplate.DataTipRows(end+1) = Powertrain(i,j,k).Cell.Model;
+
+                        hold on
 
                         if col == 1 && isempty(labely)
                             ylabel(ylab);
@@ -256,8 +269,8 @@ for p = 1:9
 end
 
 for i = 1:3
-    linkaxes(ax(nonzeros([i*3-2:i*3] .* flip(a(:,4-i)'))) ,'x');
-    linkaxes(ax(nonzeros([i:3:9]' .* a(:,i))) ,'y');
+    linkaxes(ax(nonzeros((i:3:9) .* flip(a(:,4-i)'))) ,'x');
+    linkaxes(ax(nonzeros((i*3-2:i*3)' .* a(:,i))) ,'y');
 end
 
 hold off

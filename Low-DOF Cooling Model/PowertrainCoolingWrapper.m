@@ -34,7 +34,7 @@ rng('default') % For Reproducability in Development
 
 
 %% Drive Cycle Processing
-Request.TorqueScaling = 100 ./ 60 * 2; % Percent of Total Torque During Endurance []
+Request.TorqueScaling = 100 ./ 60; % Percent of Total Torque During Endurance []
 
 Data(1) = RequestImport( 'Cropped_FE6_Endurance_Stint_1.csv' );
 Data(2) = RequestImport( 'Cropped_FE6_Endurance_Stint_2.csv' );
@@ -209,7 +209,7 @@ end
 
 Parameter.Accumulator = Accumulator;
 Parameter.Motor = Motor;
-Parameter.Controller = Controller;
+Parameter.Controller = Controller; %https://docs.google.com/spreadsheets/d/1xYsLLXJWrTAdRza7wfWxxjWUh7wPpuvQZ3sG_8fNQ5k/edit#gid=2095801957
 
 
 clear Fields i 
@@ -217,6 +217,13 @@ clear Fields i
 %% Run Simulink Model
 sim('PowertrainCoolingModel.slx');
 plot(ans.Thermal.PosTab);
+hold on
+plot(ans.Thermal.Cell);
+title('Cell Terminal Temperature Over Endurance Cycle')
+xlabel('Time (seconds)')
+xlim([0 2000])
+ylabel('Temperature (K)')
+legend('Tab', 'Cell')
 
 
 %% Local Functions
