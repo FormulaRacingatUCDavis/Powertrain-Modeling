@@ -139,7 +139,7 @@ Accumulator.Collector.Material.k = [ Material.Copper.k , Material.Tflex.k];
 
 
 Accumulator.Collector.Dimensions.Thickness = [40 / (39370), ... % Busbar Thickness
-                                                34 / (39370)]; % Thermal Pad Thickness, [mils -> m]
+                                                12 / (39370)]; % Thermal Pad Thickness, [mils -> m]
 Accumulator.Collector.Dimensions.Area = [0.030 * 5, ... % Busbar Area
                                                 0.045 * 5]; % Thermal Pad Area
 
