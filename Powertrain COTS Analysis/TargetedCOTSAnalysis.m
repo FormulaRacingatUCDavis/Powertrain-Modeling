@@ -52,8 +52,7 @@ for i = 1 : length(Motor)
                                                EnduranceActionLoad)).^(1/2) ./ (10/6) ./ (Accumulator.PowerPeak/50000) .* ...
                                               (Powertrain(i,j,k).Accumulator.Series .* Powertrain(i,j,k).Cell.VoltageMax ./ 117.6) .*...
                                                Accumulator.PowerPeak ./ 1000;
-%                 Powertrain(i,j,k).PowerAvail = Powertrain(i,j,k).PowerAvail ./ (10/6) ./ (Accumulator.PowerPeak/50000) ./...
-%                                                (117.6 ./ (Powertrain(i,j,k).Accumulator.Series .* Powertrain(i,j,k).Cell.VoltageMax));
+
             end
             
         end
@@ -67,7 +66,7 @@ for i = 1 : length(Motor)
             
             if isempty(Powertrain(i,j,k).Flag)
                 p = scatter(Powertrain(i,j,k).Accumulator.Voltage,...
-                             Powertrain(i,j,k).PowerAvail,...
+                             Powertrain(i,j,k).Rejection,...
                              '.','MarkerEdgeColor', Powertrain(i,j,k).Color);
                 
                 p.DataTipTemplate.DataTipRows(end+1) = Powertrain(i,j,k).Cell.Model;
@@ -80,11 +79,10 @@ for i = 1 : length(Motor)
     end
 end
 
-title('Power Usable Without Thermal Attenuation Occurring')
+title('Accumulator Cell Mass Over Voltage Range')
 xlabel('Voltage')
 xlim([0 600])
-ylabel('Powertrain Mass [kg]')
-ylabel('Usable Power [kW]')
+ylabel('Mass [kg]')
 hold off
 
 %% Local Functions

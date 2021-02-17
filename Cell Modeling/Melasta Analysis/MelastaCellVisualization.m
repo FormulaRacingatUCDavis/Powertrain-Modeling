@@ -21,7 +21,7 @@ title(  'Discharge Curves', 'Interpreter', 'latex' )
 xlabel( 'Capacity [$mAh$]', 'Interpreter', 'latex' )
 ylabel( 'Internal Resistance [$m \Omega$]', 'Interpreter', 'latex' )
 
-legend( 
+legend();
 
 subplot(1,2,2)
 for i = 1:size(Capacity,2)
