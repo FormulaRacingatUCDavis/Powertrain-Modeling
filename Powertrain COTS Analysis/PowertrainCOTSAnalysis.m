@@ -15,7 +15,7 @@ Accumulator.Rejection = 1000;        % Maximum Possible Cooling [W]
 Accumulator.Mass      = 36.7;        % Max allowable cell mass [kg]
 
 EnduranceActionLoad   = 22156741.88; % Constant from endurance, sum of Current^2 times each time step
-TempAmbient           = 35;
+TempAmbient           = 25;
 EnduranceTime         = 1943;
 
 Cell(1).Cp            = 0.902      ; % Lithium ion cell specific heat capacity [J/g-K]
