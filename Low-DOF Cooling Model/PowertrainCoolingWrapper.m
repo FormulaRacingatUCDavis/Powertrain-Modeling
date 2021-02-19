@@ -34,7 +34,7 @@ rng('default') % For Reproducability in Development
 
 
 %% Drive Cycle Processing
-Request.TorqueScaling = 100 ./ 60; % Percent of Total Torque During Endurance []
+Request.TorqueScaling = 60 ./ 60; % Percent of Total Torque During Endurance []
 
 Data(1) = RequestImport( 'Cropped_FE6_Endurance_Stint_1.csv' );
 Data(2) = RequestImport( 'Cropped_FE6_Endurance_Stint_2.csv' );
@@ -137,9 +137,8 @@ Accumulator.Collector.Material.k = [ Material.Copper.k , Material.Tflex.k];
     % 1 - Copper Busbars
     % 2 - Tflex Thermal Pad
 
-
 Accumulator.Collector.Dimensions.Thickness = [40 / (39370), ... % Busbar Thickness
-                                                12 / (39370)]; % Thermal Pad Thickness, [mils -> m]
+                                                34 / (39370)]; % Thermal Pad Thickness, [mils -> m]
 Accumulator.Collector.Dimensions.Area = [0.030 * 5, ... % Busbar Area
                                                 0.045 * 5]; % Thermal Pad Area
 
@@ -160,7 +159,7 @@ Accumulator.Fin.Thermal.k = 200; %Fin Thermal Conductivity [W/m-K]
 Accumulator.Fin.Thermal.cp = 0.9; %Specific Heat Capacity [kJ/kg-K]
     % Source: Matweb, for Aluminum 6063-T6
     
-Accumulator = AccumulatorFinCalculations( Accumulator ); % See Local Functions
+Accumulator = StraightFinCalculations( Accumulator ); % See Local Functions
 
 %% Motor Characterization
 Motor.Dimensions.A = 367792.9E-6; % Surface Area [mm^2 -> m^2]
@@ -183,7 +182,7 @@ Motor.Thermal.h = 10; % Convective Heat Transfer Coefficient [W/m^2-K]
 Motor = MotorCalculations( Motor );
 
 %% Controller Characterization
-Controller.Electrical.Efficiency = 89 / 100; % Controller Efficiency [ ]
+Controller.Electrical.Efficiency = 95 / 100; % Controller Efficiency [ ]
 % 896 J/kg-K
 % 753 J/kg-K
 
@@ -192,6 +191,22 @@ Controller.Electrical.Efficiency = 89 / 100; % Controller Efficiency [ ]
 Controller.Thermal.Cp = 2.2932 * 896 + 753 * .0022 * 96;
 Controller.TorqueScaling = Request.TorqueScaling;
 
+%%% Fin Characterization
+Controller.Fin.Dimensions.Height = 0.02; % Fin Height [in -> m]
+Controller.Fin.Dimensions.Base = 0.0075; % Base Thickness[in -> m]
+Controller.Fin.Dimensions.Thick = 0.003; % Fin Thickness [in -> m]
+Controller.Fin.Dimensions.Spacing = 0.005; % Fin Spacing [in -> m]
+    % Source: HeatSinkUSA.com
+
+Controller.Fin.Dimensions.Width = .27; % Heat Sink Width (z) [in -> m]
+Controller.Fin.Dimensions.Length = .23; % Fin Length (x) [in -> m]
+    % Source: Pack CAD
+    
+Controller.Fin.Thermal.k = 167; %Fin Thermal Conductivity [W/m-K]
+Controller.Fin.Thermal.cp = 0.896; %Specific Heat Capacity [kJ/kg-K]
+    % Source: Matweb, for Aluminum 6063-T6
+
+Controller = StraightFinCalculations( Controller );
 
 %% Chassis Characterization
 Chassis.Dimensions.Volume = 0.15; % Volume of Air in Rear Chassis [m^3]
@@ -268,23 +283,23 @@ function Request = RequestCalculations( Request, Data )
 
     %%% Concatenating Data Series with Driver Change Period
     Request.Raw.Time = [ linspace( 0, 0.99*dt, 10)'; Data(1).Time + dt ; ... % First Stint
-                       (Data(1).Time(end) + 2*dt : dt : Data(1).Time(end) + 2*dt + 3*60)'; ... % Driver Switch (Turned Off, Not Recorded)
-                       Data(2).Time + Data(1).Time(end) + 3*dt + 3*60 ]; % Second Stint, Raw Time [s]
+                       (Data(1).Time(end) + 2*dt : dt : Data(1).Time(end) + 2*dt + .5*60)'; ... % Driver Switch (Turned Off, Not Recorded)
+                       Data(2).Time + Data(1).Time(end) + 3*dt + .5*60 ]; % Second Stint, Raw Time [s]
 
     Request.Raw.Voltage = [ Data(1).Voltage(1) .* ones(10, 1); Data(1).Voltage; ... % First Stint
-                          ones( size( (Data(1).Time(end) + dt : dt : Data(1).Time(end) + dt + 3*60)' ) ) .* Data(1).Voltage(end); ... % Driver Switch (Turned Off, Not Recorded)
+                          ones( size( (Data(1).Time(end) + dt : dt : Data(1).Time(end) + dt + .5*60)' ) ) .* Data(1).Voltage(end); ... % Driver Switch (Turned Off, Not Recorded)
                           Data(2).Voltage ]; % Second Stint, Raw Voltage [V] 
 
     Request.Raw.Current = [ zeros(10,1); Data(1).Current; ... % First Stint
-                          zeros( size( (Data(1).Time(end) + dt : dt : Data(1).Time(end) + dt + 3*60)' ) ); ... % Driver Switch (Turned Off, Not Recorded)
+                          zeros( size( (Data(1).Time(end) + dt : dt : Data(1).Time(end) + dt + .5*60)' ) ); ... % Driver Switch (Turned Off, Not Recorded)
                           Data(2).Current ]; % Second Stint, Raw Current [A]
 
     Request.Raw.OverVoltage = [ zeros(10,1); Data(1).OverVoltage; ... % First Stint
-                              zeros( size( (Data(1).Time(end) + dt : dt : Data(1).Time(end) + dt + 3*60)' ) ); ... % Driver Switch (Turned Off, Not Recorded)
+                              zeros( size( (Data(1).Time(end) + dt : dt : Data(1).Time(end) + dt + .5*60)' ) ); ... % Driver Switch (Turned Off, Not Recorded)
                               Data(2).OverVoltage ]; % Second Stint, Over Voltage Fault [ ]
 
     Request.Raw.OverPower = [ zeros(10,1); Data(1).OverPower; ... % First Stint
-                            zeros( size( (Data(1).Time(end) + dt : dt : Data(1).Time(end) + dt + 3*60)' ) ); ... % Driver Switch (Turned Off, Not Recorded)
+                            zeros( size( (Data(1).Time(end) + dt : dt : Data(1).Time(end) + dt + .5*60)' ) ); ... % Driver Switch (Turned Off, Not Recorded)
                             Data(2).OverPower ]; % Second Stint, Over Power Fault [ ]
 
     Request.Raw.Power = Request.Raw.Voltage .* Request.Raw.Current; % Raw Power [W]
@@ -368,7 +383,7 @@ function Accumulator = CollectorResistanceCalculations( Accumulator )
     Accumulator.Collector.Thermal.Resistance
 end
 
-function Accumulator = AccumulatorFinCalculations( Accumulator )
+function Accumulator = StraightFinCalculations( Accumulator )
     Accumulator.Fin.Dimensions.N = ( Accumulator.Fin.Dimensions.Width + Accumulator.Fin.Dimensions.Spacing )...
         ./ ( Accumulator.Fin.Dimensions.Spacing + Accumulator.Fin.Dimensions.Thick);
     
