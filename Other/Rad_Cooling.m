@@ -27,7 +27,7 @@ AminC= Tube_W*Tube_H;
 WPC=2*(Tube_W+Tube_H);
 DhC=4*AminC/WPC;
 
-Water_Volumetric_Flow= .0018927;%Coolant Volumetric Flow, m^3/sec
+Water_Volumetric_Flow= .0002;%Coolant Volumetric Flow, m^3/sec
 v_Water=Water_Volumetric_Flow/(Num_of_Tubes*AminC);
 rho_Water=1015.57;                                          % Density water, kg/m^3 
 meu_Water=.000744082;                                       % Viscosity water, Pa/s   
