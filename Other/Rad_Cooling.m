@@ -1,6 +1,7 @@
+
+clc; clear; close all;
+
 % Changable are staggered and commented to the right
-
-
 
 %Water Tube Parameters
 Num_of_Tubes= 33; %number of water Tubes
@@ -54,7 +55,6 @@ C_Air=1004.16;                                              %Specific Heat Air, 
 k_Air=.0266355;                                             %Thermal Conductivity Air, W/M*K
 
 
-
 %UA Calcs
 mdot_Air= Air_Volumetric_Flow*rho_A;
 mdot_Water=Water_Volumetric_Flow*rho_Water;
@@ -77,7 +77,6 @@ UA=C_min*Ntu; % W/m^2 K
 NfHa=(1/Air_SA)/((1/UA)-(1/(Coolant_SA*Hc)));
 
 
-
 %Water Tube Parameters, New 
 Num_of_Tubes_New= 24;                                        %Number of water tubes    
 Tube_H_New= .005;                                            %Height of each tube, Meters
@@ -90,7 +89,6 @@ Fin_H_New= .008;                                             %Fin Height, Meters
 Fin_W_New= .0254;                                            %Fin Width, Meters
 Num_Rows_Fins_New= Num_of_Tubes_New-2;                       %Number of rows of fins
 Num_of_AirPassages_New= Num_Rows_Fins_New*(Rad_L_New./Fin_Dist_New);
-
                                          
 
 %Fin and Water Area Calculations, New
@@ -99,7 +97,7 @@ Air_SA_New= Num_of_AirPassages_New.*(2.*(Fin_Dist_New.*Fin_H_New)+2.*(Fin_H_New.
 
 UA_New= (1./(Hc.*Coolant_SA_New)+1./(NfHa.*Air_SA_New)).^-1;
 
-Volumetric_Flow_Water_New=.00003;                         %m^3/s of water flow  
+Volumetric_Flow_Water_New=.0002;                         %m^3/s of water flow  
 Volumetric_Flow_Air_New=.2;                                  %m^3/s of air flow
 mdot_Water_New=Volumetric_Flow_Water_New*rho_Water;          %kg/s of water flow
 mdot_Air_New=Volumetric_Flow_Air_New*rho_A;                  %kg/s of air flow
@@ -111,8 +109,8 @@ C_Ratio_New=C_min_New./C_max_New;
 
 Epsilon_New= 1-exp(-1.*(C_max_New.*(1-exp(-1.*C_Ratio_New.*Ntu_New))./C_min_New));
 
-Desired_Temp_Water=55;                                      % Water temperature inlet, Deg C
-Air_Temp_In=43;                                             % Air temperature inlet, Deg C
+Desired_Temp_Water=50;                                      % Water temperature inlet, Deg C
+Air_Temp_In=40;                                             % Air temperature inlet, Deg C
 Temp_Dif=Desired_Temp_Water-Air_Temp_In;                    % Water vs air delta.
 heat=Epsilon_New.*C_min_New.*Temp_Dif                       % Heat rejected, W
 
@@ -125,9 +123,6 @@ heat=Epsilon_New.*C_min_New.*Temp_Dif                       % Heat rejected, W
 %xlabel('Radiator Length, Meters')
 %ylabel('Heat rejected, W')
 %title('Radiator, variable length 6in by 1in w/ .002meters fin spacing, 25deg C delta,1.47e-5 m^3/s water flow, .17585 m^3/s airflow')
-
-
-
 
 %Area= Thermal_Load/(UA*Temp_Dif)
 
