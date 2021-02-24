@@ -4,10 +4,10 @@ clc; clear; close all;
 Parameter.VRange =    [450:600];
 Parameter.Capacity =   6700;
 Parameter.PeakPower =  65000;
-Parameter.Resistance = 200;
-Parameter.Mass =       40;
-Parameter.CellCount =  200;
-PassPercentage =       1/2;
+Parameter.Resistance = 125;
+Parameter.Mass =       38;
+Parameter.CellCount =  750;
+PassPercentage =       2/3;
 
 EnduranceActionLoad   = 22156741.88;
 TempAmbient = 35;
@@ -15,8 +15,6 @@ EnduranceTime = 1943;
 
 %% Data Import
 Import = string(table2cell(readtable('Melasta_Cells.csv', 'PreserveVariableNames', true)));
-Import(str2double(Import(:,6)) > 7700,:) = [];
-Import(str2double(Import(:,6)) < 7000,:) = [];
 
 Cell.Parameter.Model =               Import(:,1);
 Cell.Parameter.VoltageNominal =      str2double(regexprep(Import(:,4), '.$', '', 'lineanchors'));
@@ -55,42 +53,24 @@ Cell.Pack.Resistance(Cell.Pack.Resistance > Parameter.Resistance) = NaN;
     Cell.Pack.Flag(isnan(Cell.Pack.Resistance)) = false;
 Cell.Pack.Mass(Cell.Pack.Mass > Parameter.Mass) =                   NaN;
     Cell.Pack.Flag(isnan(Cell.Pack.Mass)) =       false;
-Cell.Pack.CellCount(Cell.Pack.CellCount < Parameter.CellCount) =    NaN;
+Cell.Pack.CellCount(Cell.Pack.CellCount > Parameter.CellCount) =    NaN;
     Cell.Pack.Flag(isnan(Cell.Pack.CellCount)) =  false;
+Cell.Pack.CellCount(Cell.Pack.CellCount < 150) =    NaN;
+    Cell.Pack.Flag(isnan(Cell.Pack.CellCount)) =  false;
+
+%% Pareto Plotting
+
+for i = 1:size(Cell.Parameter.Model,1)
+    p = scatter3(Cell.Pack.Mass(i,Cell.Pack.Flag(i,:)) , Cell.Pack.Rejection(i,Cell.Pack.Flag(i,:)) , Parameter.VRange(Cell.Pack.Flag(i,:)) , '.');
     
-Cell.Performance = sum(Cell.Pack.Flag');
+    p.DataTipTemplate.DataTipRows(end+1) = Cell.Parameter.Model(i);
+    
+    hold on
+end
 
-i = find(Cell.Performance>length(Parameter.VRange)*PassPercentage);
-%% Data Export and Spacing
-Import = string(table2cell(readtable('Melasta_Cells.csv', 'PreserveVariableNames', true)));
-
-Final = Cell.Parameter.Model(i,:);
-Final(:,5) = Cell.Parameter.VoltageNominal(i,:);
-Final(:,6) = Cell.Parameter.VoltageMax(i,:);
-Final(:,7) = Cell.Parameter.Capacity(i,:);
-Final(:,8) = Cell.Parameter.DischargeContinuous(i,:);
-Final(:,9) = Cell.Parameter.DischargeMax(i,:);
-Final(:,10) = 2 .* Cell.Parameter.Impedance(i,:);
-Final(:,14) = str2double(extractBefore(Import(i,10), '±'));
-Final(:,15) = str2double(extractBefore(Import(i,11), '±'));
-Final(:,16) = str2double(extractBefore(Import(i,12), '±'));
-Final(:,17) = Cell.Parameter.Mass(i,:);
-
-writematrix(Final,'Desktop\PossibleMelasta.csv')
-
-% %% Pareto Plotting
-% 
-% for i = 1:size(Cell.Parameter.Model,1)
-%     p = scatter3(Cell.Pack.Mass(i,Cell.Pack.Flag(i,:)) , Cell.Pack.Rejection(i,Cell.Pack.Flag(i,:)) , Parameter.VRange(Cell.Pack.Flag(i,:)) , '.');
-%     
-%     p.DataTipTemplate.DataTipRows(end+1) = Cell.Parameter.Model(i);
-%     
-%     hold on
-% end
-% 
-% title('Accumulator Heat Requirement vs. Mass')
-% ylabel('Heat Rejection Required [W]')
-% ylim([0 1000])
-% xlabel('Cell Mass [kg]')
-% xlim([20 40])
-% hold off
+title('Accumulator Heat Requirement vs. Mass')
+ylabel('Heat Rejection Required [W]')
+ylim([0 1000])
+xlabel('Cell Mass [kg]')
+xlim([20 40])
+hold off
