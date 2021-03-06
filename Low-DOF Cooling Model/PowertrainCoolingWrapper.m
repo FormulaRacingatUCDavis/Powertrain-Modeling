@@ -34,7 +34,7 @@ rng('default') % For Reproducability in Development
 
 
 %% Drive Cycle Processing
-Request.TorqueScaling = 60 ./ 60; % Percent of Total Torque During Endurance []
+Request.TorqueScaling = 125 ./ 60; % Percent of Total Torque During Endurance []
 
 Data(1) = RequestImport( 'Cropped_FE6_Endurance_Stint_1.csv' );
 Data(2) = RequestImport( 'Cropped_FE6_Endurance_Stint_2.csv' );
