@@ -34,7 +34,7 @@ rng('default') % For Reproducability in Development
 
 
 %% Drive Cycle Processing
-Request.TorqueScaling = 125 ./ 60; % Percent of Total Torque During Endurance []
+Request.TorqueScaling = 91 ./ 60; % Percent of Total Torque During Endurance []
 
 Data(1) = RequestImport( 'Cropped_FE6_Endurance_Stint_1.csv' );
 Data(2) = RequestImport( 'Cropped_FE6_Endurance_Stint_2.csv' );
@@ -94,7 +94,7 @@ Material.Tflex = table( 7.5, ... % Thermal Conductivity [W/m-K]
     
 %% Accumulator Characterization
 %%% Cell Characterization
-Accumulator.Cell.Electrical.Configuration = '4p,28s,5p';
+Accumulator.Cell.Electrical.Configuration = '17s,6p,6s';
 
 Accumulator.Cell.Electrical.Capacity  = 3 * (3600); % Cell Capacity [C]
     % Source: Sony VTC-6 Datasheet
@@ -122,6 +122,7 @@ Accumulator.Cell.Thermal.cp = 1.0 .* (1 + 0.2*(rand(1)-0.5) ); % Specific Heat C
 Accumulator.Cell.Mass.m = 46.6 / (1000); % Cell Unit Mass [kg]
 
 Accumulator = CellCalculations( Accumulator );
+Request.Input.Current = Request.Input.Current .* 117.6 / (Accumulator.Cell.Electrical.NSeries .* 4.2);
 
 %%% Potting Characterization (Parker Lord Chemicals: SC252)
 Accumulator.Potting.Mass.rho = 1.57 * (1000); % Potting Density [kg/m^3]
@@ -139,8 +140,8 @@ Accumulator.Collector.Material.k = [ Material.Copper.k , Material.Tflex.k];
 
 Accumulator.Collector.Dimensions.Thickness = [40 / (39370), ... % Busbar Thickness
                                                 34 / (39370)]; % Thermal Pad Thickness, [mils -> m]
-Accumulator.Collector.Dimensions.Area = [0.030 * 5, ... % Busbar Area
-                                                0.045 * 5]; % Thermal Pad Area
+Accumulator.Collector.Dimensions.Area = [0.030 * Accumulator.Cell.Electrical.NCells / 560 * Accumulator.Cell.Electrical.NSubpacks, ... % Busbar Area
+                                                0.045 * Accumulator.Cell.Electrical.NCells /560 * Accumulator.Cell.Electrical.NSubpacks]; % Thermal Pad Area
 
 Accumulator = CollectorResistanceCalculations( Accumulator ); % See Local Functions
 
@@ -151,8 +152,10 @@ Accumulator.Fin.Dimensions.Thick = 0.1 * (0.0254); % Fin Thickness [in -> m]
 Accumulator.Fin.Dimensions.Spacing = 0.15 * (0.0254); % Fin Spacing [in -> m]
     % Source: HeatSinkUSA.com
 
-Accumulator.Fin.Dimensions.Width = 5.1 * (0.0254); % Heat Sink Width (z) [in -> m]
-Accumulator.Fin.Dimensions.Length = 16.44 * (0.0254); % Fin Length (x) [in -> m]
+Accumulator.Fin.Dimensions.Width = 5.1 * (0.0254) *...
+                                   sqrt(Accumulator.Cell.Electrical.NCells/Accumulator.Cell.Electrical.NSubpacks/112); % Heat Sink Width (z) [in -> m]
+Accumulator.Fin.Dimensions.Length = 16.44 * (0.0254) *...
+                                    sqrt(Accumulator.Cell.Electrical.NCells/Accumulator.Cell.Electrical.NSubpacks/112); % Fin Length (x) [in -> m]
     % Source: Pack CAD
     
 Accumulator.Fin.Thermal.k = 200; %Fin Thermal Conductivity [W/m-K]
@@ -344,6 +347,7 @@ function Accumulator = CellCalculations( Accumulator )
     Accumulator.Cell.Electrical.NCells = eval( strrep( strrep( strrep( Accumulator.Cell.Electrical.Configuration(1:end-1), 'p', '*' ), 's', '*' ), ',', '' ) );
     
     Config = strsplit( Accumulator.Cell.Electrical.Configuration, ',' );
+    Accumulator.Cell.Electrical.NSubpacks = str2double(Config{3}(1));
     
     Accumulator.Cell.Electrical.NParallel = 1;
     Accumulator.Cell.Electrical.NSeries = 1;
@@ -380,7 +384,7 @@ function Accumulator = CollectorResistanceCalculations( Accumulator )
             Accumulator.Collector.Dimensions.Area(Accumulator.Collector.Dimensions.Laminate(i));
 
     end
-    Accumulator.Collector.Thermal.Resistance
+
 end
 
 function Accumulator = StraightFinCalculations( Accumulator )
