@@ -9,15 +9,82 @@ clc; clear; close all;
 %% Data Import
 % Import data. Data should be stored inside of a 16 element, comma
 % delimiated array. 
-AvgCell
 
-for j = 1:numlevels
-    for k = 1:numfiles
+AvgCell = struct('Time', 0, 'SoC', 0, 'Current', 0, 'Voltage', 0, 'Temp1', 0, 'Temp2', 0, 'Temp3', 0, 'Temp4', 0,'Temp5', 0,'Temp6', 0,'Temp7', 0,'Temp8', 0,'Temp9', 0,'Temp10', 0,'Temp11', 0,'Temp12', 0,'Temp13', 0,'Temp14', 0,'Temp15', 0,'Temp16', 0,'Temp17', 0,'Temp18', 0,'Temp19', 0,'Temp20', 0,'Temp21', 0,'Temp22', 0,'Temp23', 0,'Temp24', 0,'Temp25', 0,'Temp26', 0,'Temp27', 0,'Temp28', 0); 
+NumLevels = 1; 
+NumFiles = 3; 
+
+for j = 1:NumLevels
+    for k = 1:NumFiles
         myfilename = sprintf('cell%d.csv', k);
         Temp = importfile(myfilename);
+        %Check if the time field is missing anything
+        AvgCell.SoC = AvgCell.SoC + Temp.SoC; 
+        AvgCell.Current = AvgCell.Current + Temp.Current;
+        AvgCell.Voltage =  AvgCell.Voltage + Temp.Voltage;
+        AvgCell.Temp1 = AvgCell.Temp1 + Temp.Temp1;
+        AvgCell.Temp2 = AvgCell.Temp2 + Temp.Temp2;
+        AvgCell.Temp3 = AvgCell.Temp3 + Temp.Temp3; 
+        AvgCell.Temp4 = AvgCell.Temp4 + Temp.Temp4; 
+        AvgCell.Temp5 = AvgCell.Temp5 + Temp.Temp5; 
+        AvgCell.Temp6 = AvgCell.Temp6 + Temp.Temp6; 
+        AvgCell.Temp7 = AvgCell.Temp7 + Temp.Temp7; 
+        AvgCell.Temp8 = AvgCell.Temp8 + Temp.Temp8; 
+        AvgCell.Temp9 = AvgCell.Temp9 + Temp.Temp9; 
+        AvgCell.Temp10 = AvgCell.Temp10 + Temp.Temp10; 
+        AvgCell.Temp11 = AvgCell.Temp11 + Temp.Temp11; 
+        AvgCell.Temp12 = AvgCell.Temp12 + Temp.Temp12; 
+        AvgCell.Temp13 = AvgCell.Temp13 + Temp.Temp13; 
+        AvgCell.Temp14 = AvgCell.Temp14 + Temp.Temp14; 
+        AvgCell.Temp15 = AvgCell.Temp15 + Temp.Temp15; 
+        AvgCell.Temp16 = AvgCell.Temp16 + Temp.Temp16; 
+        AvgCell.Temp17 = AvgCell.Temp17 + Temp.Temp17; 
+        AvgCell.Temp18 = AvgCell.Temp18 + Temp.Temp18; 
+        AvgCell.Temp19 = AvgCell.Temp19 + Temp.Temp19; 
+        AvgCell.Temp20 = AvgCell.Temp20 + Temp.Temp20; 
+        AvgCell.Temp21 = AvgCell.Temp21 + Temp.Temp21; 
+        AvgCell.Temp22 = AvgCell.Temp22 + Temp.Temp22; 
+        AvgCell.Temp23 = AvgCell.Temp23 + Temp.Temp23; 
+        AvgCell.Temp24 = AvgCell.Temp24 + Temp.Temp24; 
+        AvgCell.Temp25 = AvgCell.Temp25 + Temp.Temp25; 
+        AvgCell.Temp26 = AvgCell.Temp26 + Temp.Temp26; 
+        AvgCell.Temp27 = AvgCell.Temp27 + Temp.Temp27; 
+        AvgCell.Temp28 = AvgCell.Temp28 + Temp.Temp28; 
+        
+        
     end
+    AvgCell.SoC = AvgCell.SoC / NumFiles;
+    AvgCell.Current = AvgCell.Current / NumFiles;
+    AvgCell.Voltage =  AvgCell.Voltage / NumFiles;
+    AvgCell.Temp1 = AvgCell.Temp1 / NumFiles;
+    AvgCell.Temp2 = AvgCell.Temp2 / NumFiles;
+    AvgCell.Temp3 = AvgCell.Temp3 / NumFiles;
+    AvgCell.Temp4 = AvgCell.Temp4 / NumFiles;
+    AvgCell.Temp5 = AvgCell.Temp5 / NumFiles;
+    AvgCell.Temp6 = AvgCell.Temp6 / NumFiles;
+    AvgCell.Temp7 = AvgCell.Temp7 / NumFiles;
+    AvgCell.Temp8 = AvgCell.Temp8 / NumFiles;
+    AvgCell.Temp9 = AvgCell.Temp9 / NumFiles;
+    AvgCell.Temp10 = AvgCell.Temp10 / NumFiles;
+    AvgCell.Temp11 = AvgCell.Temp11 / NumFiles;
+    AvgCell.Temp12 = AvgCell.Temp12 / NumFiles;
+    AvgCell.Temp13 = AvgCell.Temp13 / NumFiles;
+    AvgCell.Temp14 = AvgCell.Temp14 / NumFiles;
+    AvgCell.Temp15 = AvgCell.Temp15 / NumFiles;
+    AvgCell.Temp16 = AvgCell.Temp16 / NumFiles;
+    AvgCell.Temp17 = AvgCell.Temp17 / NumFiles;
+    AvgCell.Temp18 = AvgCell.Temp18 / NumFiles;
+    AvgCell.Temp19 = AvgCell.Temp19 / NumFiles;
+    AvgCell.Temp20 = AvgCell.Temp20 / NumFiles;
+    AvgCell.Temp21 = AvgCell.Temp21 / NumFiles;
+    AvgCell.Temp22 = AvgCell.Temp22 / NumFiles;
+    AvgCell.Temp23 = AvgCell.Temp23 / NumFiles;
+    AvgCell.Temp24 = AvgCell.Temp24 / NumFiles;
+    AvgCell.Temp25 = AvgCell.Temp25 / NumFiles;
+    AvgCell.Temp26 = AvgCell.Temp26 / NumFiles;
+    AvgCell.Temp27 = AvgCell.Temp27 / NumFiles;
+    AvgCell.Temp28 = AvgCell.Temp28 / NumFiles;
 end
-Cell1 = importfile("C:\Users\tuckr\OneDrive\Desktop\Example Output.csv"); 
     
 
 
