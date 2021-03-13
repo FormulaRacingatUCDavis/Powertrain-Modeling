@@ -2,6 +2,9 @@ clc
 clear
 close all
 
+% This model uses epsilon-NTU heat exchanger models for a cross flow heat
+% exchanger with RECTANGULR water channels
+
 %% Define Inputs
 Qw = 12;                                % Water volumetric flow (liters per min)
 Qw = Qw./60000;                         % Water volumetric flow (m3/s)
@@ -45,13 +48,16 @@ maxstep = 1000;             % Maximum step stopping criteria
 res = 1;                    % Residual initialization
 i = 1;                      % Counter initialization
 
-qgen = 2600./Nrad;          % Powertrain heat production per rad(W)
+qmc = 700;                  % Motorcontroller heat gen
+qmotor = 1500;              % Motor heat gen
+
+qgen = (qmc+qmotor)./Nrad;          % Powertrain heat production per rad(W)
 Tc(1) = 35;                 % Cold side temperature initial condition
 Th(1) = 35;                 % Hot side temperature initial condition
 
 while res > 1E-4
     Th(i) = qgen./Cw + Tc(i);       % Radiator hot side temp (C)
-    [qatn(i), epsilon(i), NTU(i), H, W, A, Ua, Cmin] = RadSize(Nplate, L, Ww, Hw, Sfin, t, Qw, mdota, Th(i), Tia);
+    [qatn(i), epsilon(i), NTU(i), H, W, A, Ua, Cmin] = RadSize_FE8(Nplate, L, Ww, Hw, Sfin, t, Qw, mdota, Th(i), Tia);
     Tc(i+1) = -qatn(i)./Cw +Th(i);
     res = abs(Tc(i)-Tc(i+1));
     i = i+1;
