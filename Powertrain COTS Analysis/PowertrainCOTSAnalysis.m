@@ -107,7 +107,7 @@ for i = 1 : length(Motor)
                                          Cell(k).VoltageMax .* Cell(k).Capacity ./ 1000;
                                        
             Powertrain(i,j,k).PowerPeak = min(Powertrain(i,j,k).Accumulator.PowerPeak , Controller(j).PowerPeak);
-            Powertrain(i,j,k).PowerPeak = min(Powertrain(i,j,k).PowerPeak , Motor(k).PowerPeak);
+            Powertrain(i,j,k).PowerPeak = min(Powertrain(i,j,k).PowerPeak , Motor(i).PowerPeak);
             
             Powertrain(i,j,k).Mass = Powertrain(i,j,k).Accumulator.Mass + Motor(i).Mass + Controller(j).Mass;
             
@@ -152,6 +152,7 @@ for i = 1 : length(Motor)
             if isempty(Powertrain(i,j,k).Flag)
                 Color = find(Cells == k);
 
+                Powertrain(i,j,k).Color = '#121214';
                 switch Color
                     case 1
                         Powertrain(i,j,k).Color = '#0072BD';    % Sky Blue
