@@ -65,7 +65,7 @@ for i = 1 : length(Motor)
         for k = 1 : length(Cell)
             
             if isempty(Powertrain(i,j,k).Flag)
-                p = scatter(Powertrain(i,j,k).Accumulator.Mass,...
+                p = scatter(Powertrain(i,j,k).Accumulator.Voltage,...
                              Powertrain(i,j,k).Rejection,...
                              '.','MarkerEdgeColor', Powertrain(i,j,k).Color);
                 
@@ -79,9 +79,10 @@ for i = 1 : length(Motor)
     end
 end
 
-title('Accumulator Cell Mass vs. Required Rejection')
-xlabel('Mass [kg]')
-ylabel('Heat Rejection [W]')
+title('Accumulator Cell Mass Over Voltage Range')
+xlabel('Voltage')
+xlim([0 600])
+ylabel('Mass [kg]')
 hold off
 
 %% Local Functions
