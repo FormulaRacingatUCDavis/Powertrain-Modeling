@@ -7,14 +7,14 @@ b = 1.073;
 c = 1.744;
 Offset = 268;
 
-PowerPeak = 30; %[kW]
-PackVoltage = 450; %[Vdc]
+PowerPeak = 80; %[kW]
+PackVoltage = 529; %[Vdc]
 PeakPackCurrent = (ceil(PowerPeak*1000/PackVoltage));
 
 %% PM100DZ Inputs
 MotorCurrent = [0:1:PeakPackCurrent]; %[Arms]
 PM100DZPowerLoss = a .* (PackVoltage.^b) .* (MotorCurrent.^c) + Offset; %[W]
-PM100DZPowerLossMax = max(PM100DZPowerLoss(:))
+PM100DZPowerLossMax = max(PM100DZPowerLoss(:));
 
 %% CM200DZ Inputs
 %CM200DZBusVoltage = [200:1:600]; %[Vdc]
@@ -27,9 +27,9 @@ PM100DZPowerLossMax = max(PM100DZPowerLoss(:))
 Figure(1) = figure('Name','PM100DZ Power Dissipation Curves'); 
 PeakMotorCurrent = [0:1:MotorCurrent]; %[Arms]
 plot(MotorCurrent, PM100DZPowerLoss);
-title({'Cascadia Motion PM100DZ Inverter','Power Dissipation @ 546Vdc, 80kW Peak'});
+title({'Cascadia Motion PM100DZ Inverter','Power Dissipation @ 529Vdc, 80kW Peak'});
 xlabel( 'Motor Current, Arms' ); ylabel( 'Power Dissipation, W' );
-set(gca,'xTick',0:20:200); set(gca,'yTick',0:150:2000);
+set(gca,'xTick',0:20:200); set(gca,'yTick',0:100:2000);
 grid on
 
 %plot(CM200DZMotorCurrent, CM200DZPowerLoss)
