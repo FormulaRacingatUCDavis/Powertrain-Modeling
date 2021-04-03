@@ -15,6 +15,7 @@ sprocketForce = motorTorque/(motorSprocketPD/2) % equivalent to tension in the c
 supportSideForce = -1*sprocketForce*sprocketToDriveSideBracket/driveSideBracketToSupportSideBracket % Force on the support side bracket
 driveSideForce = sprocketForce+supportSideForce % Force on the drive side bracket
 
+%Shear Calcs
 BoltDiameter = 0.005; % in meters
 CrossSectionalArea=(pi*0.25)*(BoltDiameter^2); % in meters^2
 BoltShearStrength = 580; % in MPa
