@@ -94,7 +94,7 @@ Material.Tflex = table( 7.5, ... % Thermal Conductivity [W/m-K]
     
 %% Accumulator Characterization
 %%% Cell Characterization
-Accumulator.Cell.Electrical.Configuration = '17s,6p,6s';
+Accumulator.Cell.Electrical.Configuration = '24s,5p,5s';
 
 Accumulator.Cell.Electrical.Capacity  = 3 * (3600); % Cell Capacity [C]
     % Source: Sony VTC-6 Datasheet
@@ -146,15 +146,15 @@ Accumulator.Collector.Dimensions.Area = [0.030 * Accumulator.Cell.Electrical.NCe
 Accumulator = CollectorResistanceCalculations( Accumulator ); % See Local Functions
 
 %%% Fin Characterization
-Accumulator.Fin.Dimensions.Height = 0.25 * (0.0254); % Fin Height [in -> m]
-Accumulator.Fin.Dimensions.Base = 0.1 * (0.0254); % Base Thickness[in -> m]
+Accumulator.Fin.Dimensions.Height = 1 * (0.0254); % Fin Height [in -> m]
+Accumulator.Fin.Dimensions.Base = 0.125 * (0.0254); % Base Thickness[in -> m]
 Accumulator.Fin.Dimensions.Thick = 0.1 * (0.0254); % Fin Thickness [in -> m]
 Accumulator.Fin.Dimensions.Spacing = 0.15 * (0.0254); % Fin Spacing [in -> m]
     % Source: HeatSinkUSA.com
 
 Accumulator.Fin.Dimensions.Width = 5.1 * (0.0254) *...
                                    sqrt(Accumulator.Cell.Electrical.NCells/Accumulator.Cell.Electrical.NSubpacks/112); % Heat Sink Width (z) [in -> m]
-Accumulator.Fin.Dimensions.Length = 16.44 * (0.0254) *...
+Accumulator.Fin.Dimensions.Length = 16.8 * (0.0254) *...
                                     sqrt(Accumulator.Cell.Electrical.NCells/Accumulator.Cell.Electrical.NSubpacks/112); % Fin Length (x) [in -> m]
     % Source: Pack CAD
     
@@ -234,9 +234,9 @@ clear Fields i
 
 %% Run Simulink Model
 sim('PowertrainCoolingModel.slx');
-plot(ans.Thermal.PosTab);
+plot(ans.Thermal.PosTab-273.15);
 hold on
-plot(ans.Thermal.Cell);
+plot(ans.Thermal.Cell-273.15);
 title('Cell Terminal Temperature Over Endurance Cycle')
 xlabel('Time (seconds)')
 xlim([0 2000])
@@ -323,7 +323,8 @@ function [Environment] = EnvironmentCalculations( Environment )
     Environment.Surface = Environment.Surface.Model;
     
     % Sampling Ambient Distribution
-    Environment.Temp = (random( Environment.Ambient ) - 32) .* 5/9; % Ambient Temperature Sample [F -> C]
+%     Environment.Temp = (random( Environment.Ambient ) - 32) .* 5/9; % Ambient Temperature Sample [F -> C]
+    Environment.Temp = 38;
     
     % Scaling Using Surface Data
     Environment.Surface.Form = eval( Environment.Surface.Form ); % Convert String to Anonymous Function

@@ -18,9 +18,14 @@ set(groot, 'defaultLegendInterpreter','latex');
 Stint(1).Raw = StintImport('Endurance_stint_1.csv');
 Stint(2).Raw = StintImport('Endurance_stint_2.csv');
 
+Stint(1).Raw.Current = Stint(1).Raw.Current .* 10/6 .* 117.6/504 * 65/50;
+Stint(2).Raw.Current = Stint(2).Raw.Current .* 10/6 .* 117.6/504 * 65/50;
+
+Stint(1).Raw.Voltage = Stint(1).Raw.Voltage .* 504/117.6;
+Stint(2).Raw.Voltage = Stint(2).Raw.Voltage .* 504/117.6;
+
 % Raw Power Calculation [kW]
-Stint(1).Raw.Current = Stint(1).Raw.Current .* 100/60 .* 65/50 .* 117.6/504;
-Stint(2).Raw.Current = Stint(2).Raw.Current .* 100/60 .* 65/50 .* 117.6/504;
+
 
 Stint(1).Raw.Power = Stint(1).Raw.Voltage.*Stint(1).Raw.Current./1000;
 Stint(2).Raw.Power = Stint(2).Raw.Voltage.*Stint(2).Raw.Current./1000;
