@@ -17,3 +17,12 @@ PLoss = a.*(VDC.^b).*(BI.^c) + offset;
 surf(VDC, BI, PLoss);
 shading flat;
 colorbar;
+
+figure
+Vdc = 504;
+I =linspace(1, 150, 600);
+Pdiss = a.*(Vdc.^b).*(I.^c) + offset;
+plot(I, Pdiss);
+title('Power Dissipation @ 504Vdc, 75.6 kW Peak');
+xlabel('Motor Current');
+ylabel('Power Dissipation') ;
