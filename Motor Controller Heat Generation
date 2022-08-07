@@ -1,0 +1,19 @@
+clc; clear; close all;
+
+a = 0.000244;
+b = 1.073;
+c = 1.744;
+
+offset = 268;
+Vdc = linspace(0, 600, 601);
+I =linspace(1, 200, 601);
+Ploss = a.*(Vdc.^b).*(I.^c) + offset;
+
+figure
+plot3(Vdc, I, Ploss);
+patch(Vdc, I, Ploss, 'm');
+[VDC, BI] = meshgrid(Vdc, I);
+PLoss = a.*(VDC.^b).*(BI.^c) + offset;
+surf(VDC, BI, PLoss);
+shading flat;
+colorbar;
