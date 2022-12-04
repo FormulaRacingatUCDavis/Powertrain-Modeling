@@ -1,0 +1,24 @@
+Python adding 
+
+1) install anaconda
+2) install python 3.90
+3) restart your computer
+
+4) go to this website
+http://www.coolprop.org/coolprop/wrappers/Python/index.html
+try 1st or 3rd method
+
+5) after installing, go to matlab, enter this prompt
+
+pcPythonExe = 'C:\Users\dmattioli\AppData\Local\Programs\Python\Python37\python.exe';
+[ver, exec, loaded]	= pyversion(pcPythonExe); pyversion
+
+or in my case 
+
+
+6) C:\Users\William \anaconda3\python.exe
+
+by this point, if you installed coolprop
+it should run on your matlab
+
+7) use pyenv to check version and python path
