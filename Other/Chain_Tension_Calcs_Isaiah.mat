@@ -1,0 +1,27 @@
+%Chain Tension Calculator
+
+Power= 80; % Max Power Output by Motor in KW
+
+Torque= 230; % Motor Torque in Nm
+Diameter = 0.049; % Diameter of Drive Sprocket in m
+Distance= 6.84; % Distance between center of the two sprockets (From CAD)
+
+Power=Power*1000; %conv to W
+radius=Diameter/2;
+
+%Tension = Power / (2*pi*RPM*radius*0.1667) True?
+%Goal: Total Chain Tension = Working Load + Centrifugal Pull
+    %Working Load = (HP x 33,000) / FPM
+    %Centrifugal Pull = [Wt. Per Foot of Chain x (FPM)2] / 115,900
+
+%Finding FPM = nteeth*Pitch*rpm
+nteeth = 12; %teeth small sprocket;
+Pitch = .5*.0254; %Ansi 40 pitch is .5in->cm;
+RPM= 504*9; % Max Rpm of Motor 
+FPM = 12*(.5*.0254)rpm; , #teeth small sprock=12
+
+%FCentrifugal = WChain*%(Weight/ft chain*(FPM)^2)/115900
+%WChain = .42*4.44822; %lbf Ansi 40 chain conv to Netwons
+%Tension = WorkingLoad + FCentrifugal
+%Lateral_Force= (2*Torque)/Diameter
+%Chain_slack= 0.02*Distance % 2% of distance between sprockets 

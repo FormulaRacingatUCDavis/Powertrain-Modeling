@@ -9,6 +9,6 @@ Distance= 6.66; % Distance between center of the two sprockets (From CAD)
 Power=Power*1000;
 radius=Diameter/2;
 
-%Tension = Power / (2*pi*RPM*radius*0.1667)
+Tension = Power / (2*pi*RPM*radius*0.1667)
 Lateral_Force= (2*Torque)/Diameter
 Chain_slack= 0.02*Distance % 2% of distance between sprockets 
