@@ -3,12 +3,11 @@
 Power= 80; % Max Power Output by Motor in KW
 
 Torque= 230; % Motor Torque in Nm
-Diameter = 0.049; % Diameter of Drive Sprocket in m
+Diameter = 0.049; % Diameter of Drive Sprocket in m. I think it is .81 rad?
 Distance= 6.84; % Distance between center of the two sprockets (From CAD)
 
 radius=Diameter/2;
 
-%Tension = Power / (2*pi*RPM*radius*0.1667) True?
 %Goal: Total Chain Tension = Working Load + Centrifugal Pull
     %Working Load = (HP x 33,000) / FPM
     %Centrifugal Pull = (Weight/ft chain*(FPM)^2)/115900
@@ -26,9 +25,14 @@ Working_Load = (HP*33000) / FPM
     %Note, can check with: Working_Load = (Chain bearing pressure)*(Bushing
     %Length)*(Pin Diam)
 
-%FCentrifugal 
+%FCentrifugal
+%Find torque by F*dist, so F* (radial dist Point of Application to bolt)
 WChain = .42*4.44822; %lbf Ansi 40 chain conv to Netwons
 FCentrifugal = (WChain*FPM^2)/115900
+POA_to_Bolt = 1.59;
+Torque_Applied = FCentrifugal*POA_to_Bolt;
+%SHOULD I MULT BY RAD SMALL SPROCK, THEN CALC TORQUE ON BIG SPROCK AND
+%AXEL? THEN MEASURE DIFFERENT DIAMS TO BOLTS ON SPROCK!?!
 
 Chain_Tension = Working_Load + FCentrifugal
 %Tension = WorkingLoad + FCentrifugal
