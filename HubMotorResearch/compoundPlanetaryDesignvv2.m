@@ -41,6 +41,23 @@ for DP = DP_range
     end
 end
 
+if ~isempty(all_valid_designs)
+    all_DPs = [all_valid_designs.DP];
+    DP_min_actual = min(all_DPs);
+    DP_max_actual = max(all_DPs);
+
+    % Optional: show corresponding overall ratios
+    ratios_min_DP = [all_valid_designs([all_valid_designs.DP] == DP_min_actual).overall_ratio];
+    ratios_max_DP = [all_valid_designs([all_valid_designs.DP] == DP_max_actual).overall_ratio];
+
+    fprintf('\n=== DP LIMIT SUMMARY ===\n');
+    fprintf('Min allowable DP: %d -> Ratios: %.2f to %.2f\n', DP_min_actual, min(ratios_min_DP), max(ratios_min_DP));
+    fprintf('Max allowable DP: %d -> Ratios: %.2f to %.2f\n', DP_max_actual, min(ratios_max_DP), max(ratios_max_DP));
+else
+    fprintf('\nNo valid designs found to calculate DP range.\n');
+end
+
+
 %%  DISPLAY AND OUTPUT RESULTS 
 display_results(all_valid_designs, gear_ratio_range);
 output_to_csv(all_valid_designs, 'fsae_gear_combinations.csv');
