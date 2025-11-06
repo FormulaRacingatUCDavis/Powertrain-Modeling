@@ -4,19 +4,19 @@ close all
 
 %% FIXED GEAR TEETH RANGES 
 sun_teeth_range = 12:18;          % Sun gear teeth range
-planet_gears.large = 40:50;       % Earth planet gear sizes  
+planet_gears.large = 40:50;       % Earth planet gear sizes
 planet_gears.small = 22:26;       % Moon planet gear sizes
 
 % Allowable gear ratio range
 gear_ratio_range = [8, 13];       % Minimum and maximum overall gear ratios
 
 % Physical constraints
-max_ring_OD = 5.85;               % inches
+max_ring_OD = 5.25;               % inches
 Np = 3;                           % Number of planets
 
 % Load parameters 
 input_torque = 40;                % N*m input torque
-safety_factor = 1.5;              % Reduced safety factor for weight savings
+safety_factor = 1.0;              % Reduced safety factor for weight savings
 
 % Material properties (4140 Steel source donalds doc)
 material.yield_strength = 161000; % psi
@@ -236,31 +236,33 @@ fprintf('Found %d designs that meet all constraints\n\n', length(combinations));
 
 % Separate by DP for better comparison
 DP16_designs = combinations([combinations.DP] == 16);
+DP18_designs = combinations([combinations.DP] == 18);
 DP20_designs = combinations([combinations.DP] == 20);
+DP22_designs = combinations([combinations.DP] == 22);
 DP24_designs = combinations([combinations.DP] == 24);
 
-fprintf('Breakdown by Tooth Size:\n');
-fprintf('DP 16: %d designs (strongest, heaviest)\n', length(DP16_designs));
-fprintf('DP 20: %d designs (balanced performance)\n', length(DP20_designs));
-fprintf('DP 24: %d designs (lightest, most compact)\n\n', length(DP24_designs));
-
 %% SHOW BEST DESIGNS FOR EACH DP
+% Ideal gear ratio
+ideal_gear_ratio = 10.5;
+
 % DP 16 Designs
 if ~isempty(DP16_designs)
-    fprintf('=== TOP DP 16 DESIGNS (STRONGEST) ===\n');
+    fprintf('============= TOP DP 16 DESIGNS (STRONGEST) =============\n');
     
     % Convert DP16 to table
-    data_16DP = [];
-    for i = 1:length(DP16_designs)
+    n = length(DP16_designs);
+    data_16DP = zeros(n, 7);
+    for i = 1:n
         combo = DP16_designs(i);
-        data_16DP = [data_16DP; ...
-            combo.sun_teeth, combo.planet_large_teeth, combo.planet_small_teeth, ...
-            combo.ring_teeth, combo.overall_ratio, combo.ring_OD, combo.bending_safety];
+        data_16DP(i,:) = [combo.sun_teeth, combo.planet_large_teeth, ...
+                          combo.planet_small_teeth, combo.ring_teeth, ...
+                          combo.overall_ratio, combo.ring_OD, combo.bending_safety];
     end
     
-    % Sort by safety factor
-    [~, sort_idx] = sort(data_16DP(:,7), 'descend');
-    data_16DP = data_16DP(sort_idx, :);
+    % Sort by proximity to ideal gear ratio
+    diff_to_ideal = data_16DP(:,5) - ideal_gear_ratio;
+    [~, sort_idx] = sort(abs(diff_to_ideal));
+    data_16DP = data_16DP(sort_idx,:);
     DP16_designs_sorted = DP16_designs(sort_idx);
     
     % Show top 5 designs
@@ -278,24 +280,65 @@ if ~isempty(DP16_designs)
         best_16DP.planet_small_teeth, best_16DP.ring_teeth);
     fprintf('Ratio: %.2f:1, Ring OD: %.2f", Safety: %.1f\n', ...
         best_16DP.overall_ratio, best_16DP.ring_OD, best_16DP.bending_safety);
+    fprintf('\n');
+end
+
+% DP 18 Designs
+if ~isempty(DP18_designs)
+    fprintf('============= TOP DP 18 DESIGNS (STRONGEST) =============\n');
+    
+    % Convert DP18 to table
+    n = length(DP18_designs);
+    data_18DP = zeros(n, 7);
+    for i = 1:n
+        combo = DP18_designs(i);
+        data_18DP(i,:) = [combo.sun_teeth, combo.planet_large_teeth, ...
+                          combo.planet_small_teeth, combo.ring_teeth, ...
+                          combo.overall_ratio, combo.ring_OD, combo.bending_safety];
+    end
+    
+    % Sort by proximity to ideal gear ratio
+    diff_to_ideal = data_18DP(:,5) - ideal_gear_ratio;
+    [~, sort_idx] = sort(abs(diff_to_ideal));
+    data_18DP = data_18DP(sort_idx,:);
+    DP18_designs_sorted = DP18_designs(sort_idx);
+    
+    % Show top 5 designs
+    num_to_show = min(5, size(data_18DP, 1));
+    T18 = array2table(data_18DP(1:num_to_show,:), 'VariableNames', {
+        'Sun', 'Earth', 'Moon', 'Ring', 'Ratio', 'Ring_OD', 'Safety_Factor'
+    });
+    disp(T18);
+    
+    % Show best DP18 design
+    best_18DP = DP18_designs_sorted(1);
+    fprintf('\nBEST DP 18 DESIGN:\n');
+    fprintf('Sun: %d, Earth: %d, Moon: %d, Ring: %d\n', ...
+        best_18DP.sun_teeth, best_18DP.planet_large_teeth, ...
+        best_18DP.planet_small_teeth, best_18DP.ring_teeth);
+    fprintf('Ratio: %.2f:1, Ring OD: %.2f", Safety: %.1f\n', ...
+        best_18DP.overall_ratio, best_18DP.ring_OD, best_18DP.bending_safety);
+    fprintf('\n');
 end
 
 % DP 20 Designs
 if ~isempty(DP20_designs)
-    fprintf('\n=== TOP DP 20 DESIGNS (BALANCED) ===\n');
+    fprintf('============= TOP DP 20 DESIGNS (STRONGEST) =============\n');
     
     % Convert DP20 to table
-    data_20DP = [];
-    for i = 1:length(DP20_designs)
+    n = length(DP20_designs);
+    data_20DP = zeros(n, 7);
+    for i = 1:n
         combo = DP20_designs(i);
-        data_20DP = [data_20DP; ...
-            combo.sun_teeth, combo.planet_large_teeth, combo.planet_small_teeth, ...
-            combo.ring_teeth, combo.overall_ratio, combo.ring_OD, combo.bending_safety];
+        data_20DP(i,:) = [combo.sun_teeth, combo.planet_large_teeth, ...
+                          combo.planet_small_teeth, combo.ring_teeth, ...
+                          combo.overall_ratio, combo.ring_OD, combo.bending_safety];
     end
     
-    % Sort by safety factor
-    [~, sort_idx] = sort(data_20DP(:,7), 'descend');
-    data_20DP = data_20DP(sort_idx, :);
+    % Sort by proximity to ideal gear ratio
+    diff_to_ideal = data_20DP(:,5) - ideal_gear_ratio;
+    [~, sort_idx] = sort(abs(diff_to_ideal));
+    data_20DP = data_20DP(sort_idx,:);
     DP20_designs_sorted = DP20_designs(sort_idx);
     
     % Show top 5 designs
@@ -313,24 +356,65 @@ if ~isempty(DP20_designs)
         best_20DP.planet_small_teeth, best_20DP.ring_teeth);
     fprintf('Ratio: %.2f:1, Ring OD: %.2f", Safety: %.1f\n', ...
         best_20DP.overall_ratio, best_20DP.ring_OD, best_20DP.bending_safety);
+    fprintf('\n');
+end
+
+% DP 22 Designs
+if ~isempty(DP22_designs)
+    fprintf('============= TOP DP 22 DESIGNS (STRONGEST) =============\n');
+    
+    % Convert DP22 to table
+    n = length(DP22_designs);
+    data_22DP = zeros(n, 7);
+    for i = 1:n
+        combo = DP22_designs(i);
+        data_22DP(i,:) = [combo.sun_teeth, combo.planet_large_teeth, ...
+                          combo.planet_small_teeth, combo.ring_teeth, ...
+                          combo.overall_ratio, combo.ring_OD, combo.bending_safety];
+    end
+    
+    % Sort by proximity to ideal gear ratio
+    diff_to_ideal = data_22DP(:,5) - ideal_gear_ratio;
+    [~, sort_idx] = sort(abs(diff_to_ideal));
+    data_22DP = data_22DP(sort_idx,:);
+    DP22_designs_sorted = DP22_designs(sort_idx);
+    
+    % Show top 5 designs
+    num_to_show = min(5, size(data_22DP, 1));
+    T22 = array2table(data_22DP(1:num_to_show,:), 'VariableNames', {
+        'Sun', 'Earth', 'Moon', 'Ring', 'Ratio', 'Ring_OD', 'Safety_Factor'
+    });
+    disp(T22);
+    
+    % Show best DP22 design
+    best_22DP = DP22_designs_sorted(1);
+    fprintf('\nBEST DP 22 DESIGN:\n');
+    fprintf('Sun: %d, Earth: %d, Moon: %d, Ring: %d\n', ...
+        best_22DP.sun_teeth, best_22DP.planet_large_teeth, ...
+        best_22DP.planet_small_teeth, best_22DP.ring_teeth);
+    fprintf('Ratio: %.2f:1, Ring OD: %.2f", Safety: %.1f\n', ...
+        best_22DP.overall_ratio, best_22DP.ring_OD, best_22DP.bending_safety);
+    fprintf('\n');
 end
 
 % DP 24 Designs
 if ~isempty(DP24_designs)
-    fprintf('\n=== TOP DP 24 DESIGNS (COMPACT) ===\n');
+    fprintf('============= TOP DP 24 DESIGNS (STRONGEST) =============\n');
     
     % Convert DP24 to table
-    data_24DP = [];
-    for i = 1:length(DP24_designs)
+    n = length(DP24_designs);
+    data_24DP = zeros(n, 7);
+    for i = 1:n
         combo = DP24_designs(i);
-        data_24DP = [data_24DP; ...
-            combo.sun_teeth, combo.planet_large_teeth, combo.planet_small_teeth, ...
-            combo.ring_teeth, combo.overall_ratio, combo.ring_OD, combo.bending_safety];
+        data_24DP(i,:) = [combo.sun_teeth, combo.planet_large_teeth, ...
+                          combo.planet_small_teeth, combo.ring_teeth, ...
+                          combo.overall_ratio, combo.ring_OD, combo.bending_safety];
     end
     
-    % Sort by safety factor
-    [~, sort_idx] = sort(data_24DP(:,7), 'descend');
-    data_24DP = data_24DP(sort_idx, :);
+    % Sort by proximity to ideal gear ratio
+    diff_to_ideal = data_24DP(:,5) - ideal_gear_ratio;
+    [~, sort_idx] = sort(abs(diff_to_ideal));
+    data_24DP = data_24DP(sort_idx,:);
     DP24_designs_sorted = DP24_designs(sort_idx);
     
     % Show top 5 designs
@@ -348,9 +432,8 @@ if ~isempty(DP24_designs)
         best_24DP.planet_small_teeth, best_24DP.ring_teeth);
     fprintf('Ratio: %.2f:1, Ring OD: %.2f", Safety: %.1f\n', ...
         best_24DP.overall_ratio, best_24DP.ring_OD, best_24DP.bending_safety);
+    fprintf('\n');
 end
-
-
 
 end
 %% ==================== DP LIMIT CALCULATOR ====================
