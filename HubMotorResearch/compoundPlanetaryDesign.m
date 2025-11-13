@@ -169,10 +169,10 @@ end
                                        
 % CORRECTED OD CALCULATIONS
 % Ring gear OD (internal gear) - pitch diameter is the OD for internal gears
-ring_OD = ring_teeth / DP;
+ring_OD = (ring_teeth + 2) / DP;
 
 % First stage OD (sun + large planets) - add 2 addendums for gear tips
-first_stage_OD = (sun_teeth + 2 * planet_large_teeth + 2) / DP;
+first_stage_OD = (sun_teeth + (2 * planet_large_teeth) + 2) / DP;
 
 % The actual gearbox OD is the larger of ring OD or first stage OD
 gearbox_OD = max(ring_OD, first_stage_OD);
@@ -183,7 +183,7 @@ if gearbox_OD > max_gearbox_OD
 end
 
 % Check sun gear shaft fit (minimum 0.625" bore)
-sun_root_dia = (sun_teeth - 2.5) / DP; % Root diameter for full-depth teeth
+sun_root_dia = (sun_teeth - 3) / DP; % Root diameter for full-depth teeth
 min_shaft_dia = 0.625; % Motor shaft size
 if sun_root_dia < min_shaft_dia
     is_valid = false;
