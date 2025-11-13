@@ -166,11 +166,17 @@ if min_motor_shaft > sun_realistic_ID
     is_valid = false;
     return;
 end
+                                       
+% CORRECTED OD CALCULATIONS
+% Ring gear OD (internal gear) - pitch diameter is the OD for internal gears
+ring_OD = ring_teeth / DP;
 
-% Check gearbox OD size constraint
-ring_OD = (ring_teeth + 2)/DP;
-first_stage_OD = (sun_teeth/DP) + ((planet_large_teeth * 2) + 2)/DP;
+% First stage OD (sun + large planets) - add 2 addendums for gear tips
+first_stage_OD = (sun_teeth + 2 * planet_large_teeth + 2) / DP;
+
+% The actual gearbox OD is the larger of ring OD or first stage OD
 gearbox_OD = max(ring_OD, first_stage_OD);
+
 if gearbox_OD > max_gearbox_OD
     is_valid = false;
     return;
@@ -232,10 +238,16 @@ for sun_teeth = sun_teeth_range
                 combo.overall_ratio = overall_ratio;
                 combo.DP = DP;
                 
-                % Calculate physical dimensions
+                % Calculate CORRECTED physical dimensions
                 combo.ring_pitch_dia = ring_teeth / DP;
-                combo.ring_OD = combo.ring_pitch_dia + 2/DP;
-                combo.first_stage_OD = (sun_teeth/DP) + ((planet_large_teeth * 2) + 2)/DP;
+                combo.ring_OD = ring_teeth / DP; % For internal gear, pitch diameter = OD
+                
+                % First stage OD includes addendum (gear tips)
+                combo.first_stage_OD = (sun_teeth + 2 * planet_large_teeth + 2) / DP;
+                
+                % Gearbox OD is the larger of ring OD or first stage OD
+                combo.gearbox_OD = max(combo.ring_OD, combo.first_stage_OD);
+                
                 combo.carrier_dia = (sun_teeth + planet_large_teeth) / DP;
                 
                 % Check strength
