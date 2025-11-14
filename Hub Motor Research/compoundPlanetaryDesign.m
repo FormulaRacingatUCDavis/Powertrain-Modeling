@@ -3,7 +3,7 @@ clc
 close all
 
 %% FIXED GEAR TEETH RANGES 
-sun_teeth_range = 12:18;          % Sun gear teeth range
+sun_teeth_range = 12:24;          % Sun gear teeth range
 planet_gears.large = 40:50;       % Earth planet gear sizes
 planet_gears.small = 22:26;       % Moon planet gear sizes
 
@@ -136,6 +136,7 @@ function Y = get_lewis_form_factor(teeth)
         Y = Y_table(end);
         return;
     end
+    Y = interp1(teeth_table, Y_table, teeth, 'linear');
 
 end
 
@@ -478,7 +479,7 @@ if ~isempty(DP22_designs)
     % Show top 5 designs
     num_to_show = min(5, size(data_22DP, 1));
     T22 = array2table(data_22DP(1:num_to_show,:), 'VariableNames', {
-        'Sun', 'Earth', 'Moon', 'Ring', 'Ratio', 'Ring_OD', 'First_Stage_OD', 'Safety_Factor''Weight_lb' 
+        'Sun', 'Earth', 'Moon', 'Ring', 'Ratio', 'Ring_OD', 'First_Stage_OD', 'Safety_Factor','Weight_lb' 
     });
     disp(T22);
     
