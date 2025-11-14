@@ -61,7 +61,7 @@ end
 
 %%  DISPLAY AND OUTPUT RESULTS 
 display_results(all_valid_designs, gear_ratio_range);
-output_to_csv(all_valid_designs, 'fsae_gear_combinations.csv');
+% output_to_csv(all_valid_designs, 'fsae_gear_combinations.csv');
 
 end
 
@@ -587,6 +587,7 @@ function DP_range = calculate_DP_limits(torque_Nm, yield_strength, safety, max_g
     
 end
 %% ==================== CSV OUTPUT ====================
+%{
 function output_to_csv(combinations, filename)
 if isempty(combinations)
     fprintf('No data to write to CSV.\n');
@@ -620,14 +621,14 @@ fprintf('Results written to: %s\n', full_path);
 
 
 end
-
+%}
 %% sort 
 function [sorted_data, sorted_designs, combined_scores] = apply_weighted_scoring(data, designs, ideal_ratio)
     % Extract columns
     weights = data(:,9);  % Column 9 = weight
     ratios = data(:,5);   % Column 5 = gear ratio
     
-    % Normalize both metrics to 0-1 scale (lower is better)
+    % Normalize both metrics to 0-1 scale (higher is better)
     if max(weights) == min(weights)
         normalized_weights = zeros(size(weights));  % All weights are equal
     else
@@ -642,14 +643,14 @@ function [sorted_data, sorted_designs, combined_scores] = apply_weighted_scoring
     end
     
     % Apply weighting factors
-    weight_factor = 0.65;    % 60% importance on weight
-    ratio_factor = 0.35;     % 40% importance on ratio proximity
+    weight_factor = 0.65;    % 65% importance on weight
+    ratio_factor = 0.35;     % 35% importance on ratio proximity
     
-    % Calculate combined score (lower is better)
-    combined_scores = (weight_factor * normalized_weights) + (ratio_factor * normalized_ratios);
+    % Calculate combined score (higher is better)
+    combined_scores = 1 - ((weight_factor * normalized_weights) + (ratio_factor * normalized_ratios));
     
-    % Sort by combined score (lowest first = best)
-    [sorted_scores, sort_idx] = sort(combined_scores);
+    % Sort by combined score (highest first = best)
+    [sorted_scores, sort_idx] = sort(combined_scores, 'descend');
     sorted_data = data(sort_idx,:);
     sorted_designs = designs(sort_idx);
     combined_scores = sorted_scores;  % Return the sorted scores
