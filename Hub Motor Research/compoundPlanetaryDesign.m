@@ -348,186 +348,201 @@ ideal_gear_ratio = 10.5;
 
 % DP 16 Designs
 if ~isempty(DP16_designs)
-    fprintf('========================== TOP DP 16 DESIGNS (STRONGEST) ==========================\n');
+    fprintf('========================== TOP DP 16 DESIGNS (BEST BALANCED) ==========================\n');
     
-    % Convert DP16 to table
+    % Convert to data array
     n = length(DP16_designs);
-    data_16DP = zeros(n, 9);
+    data_array = zeros(n, 9);
     for i = 1:n
         combo = DP16_designs(i);
-        data_16DP(i,:) = [combo.sun_teeth, combo.planet_large_teeth, ...
+        data_array(i,:) = [combo.sun_teeth, combo.planet_large_teeth, ...
                           combo.planet_small_teeth, combo.ring_teeth, ...
-                          combo.overall_ratio, combo.ring_OD, combo.first_stage_OD, combo.bending_safety, combo.weight];
+                          combo.overall_ratio, combo.ring_OD, combo.first_stage_OD, ...
+                          combo.bending_safety, combo.weight];
     end
     
-    % Sort by weight (lowest to highest)
-    [~, sort_idx] = sort(data_16DP(:,9));  % Column 9 = weight
-    data_16DP = data_16DP(sort_idx,:);
-    DP16_designs_sorted = DP16_designs(sort_idx);
+    % Apply weighted scoring (this does ALL the sorting)
+    [sorted_data, DP16_designs_sorted, scores_16] = apply_weighted_scoring(data_array, DP16_designs, 10.5);
     
-    % Show top 5 designs
-    num_to_show = min(5, size(data_16DP, 1));
-    T16 = array2table(data_16DP(1:num_to_show,:), 'VariableNames', {
-        'Sun', 'Earth', 'Moon', 'Ring', 'Ratio', 'Ring_OD', 'First_Stage_OD', 'Safety_Factor', 'Weight_lb'
+    % Add scores to the sorted data (now 10 columns)
+    final_data = [sorted_data, scores_16];
+    
+    % Show top 5 balanced designs
+    num_to_show = min(5, size(final_data, 1));
+    T16 = array2table(final_data(1:num_to_show,:), 'VariableNames', {
+        'Sun', 'Earth', 'Moon', 'Ring', 'Ratio', 'Ring_OD', 'First_Stage_OD', 'Safety_Factor', 'Weight_lb', 'Score'
     });
     disp(T16);
     
-    % Show best DP16 design
+    % Show best balanced DP16 design
     best_16DP = DP16_designs_sorted(1);
-    fprintf('\nBEST DP 16 DESIGN:\n');
+    fprintf('\nBEST BALANCED DP 16 DESIGN:\n');
     fprintf('Sun: %d, Earth: %d, Moon: %d, Ring: %d\n', ...
         best_16DP.sun_teeth, best_16DP.planet_large_teeth, ...
         best_16DP.planet_small_teeth, best_16DP.ring_teeth);
-    fprintf('Ratio: %.2f:1, Ring OD: %.2f", First Stage OD: %.2f", Safety: %.1f\n', ...
-        best_16DP.overall_ratio, best_16DP.ring_OD, best_16DP.first_stage_OD, best_16DP.bending_safety);
+    fprintf('Ratio: %.2f:1, Ring OD: %.2f", First Stage OD: %.2f", Safety: %.1f, Weight: %.2f lb, Score: %.3f\n', ...
+        best_16DP.overall_ratio, best_16DP.ring_OD, best_16DP.first_stage_OD, ...
+        best_16DP.bending_safety, best_16DP.weight, scores_16(1));
     fprintf('\n');
 end
 
 % DP 18 Designs
 if ~isempty(DP18_designs)
-    fprintf('========================== TOP DP 18 DESIGNS (STRONGEST) ==========================\n');
+    fprintf('========================== TOP DP 18 DESIGNS (BEST BALANCED) ==========================\n');
     
-    % Convert DP18 to table
+    % Convert to data array
     n = length(DP18_designs);
-    data_18DP = zeros(n, 9);
+    data_array = zeros(n, 9);
     for i = 1:n
         combo = DP18_designs(i);
-        data_18DP(i,:) = [combo.sun_teeth, combo.planet_large_teeth, ...
+        data_array(i,:) = [combo.sun_teeth, combo.planet_large_teeth, ...
                           combo.planet_small_teeth, combo.ring_teeth, ...
-                          combo.overall_ratio, combo.ring_OD, combo.first_stage_OD, combo.bending_safety, combo.weight];
+                          combo.overall_ratio, combo.ring_OD, combo.first_stage_OD, ...
+                          combo.bending_safety, combo.weight];
     end
     
-    % Sort by weight (lowest to highest)
-    [~, sort_idx] = sort(data_18DP(:,9));  % Column 9 = weight
-    data_18DP = data_18DP(sort_idx,:);
-    DP18_designs_sorted = DP18_designs(sort_idx);
+    % Apply weighted scoring (this does ALL the sorting)
+    [sorted_data, DP18_designs_sorted, scores_18] = apply_weighted_scoring(data_array, DP18_designs, 10.5);
     
-    % Show top 5 designs
-    num_to_show = min(5, size(data_18DP, 1));
-    T18 = array2table(data_18DP(1:num_to_show,:), 'VariableNames', {
-        'Sun', 'Earth', 'Moon', 'Ring', 'Ratio', 'Ring_OD', 'First_Stage_OD', 'Safety_Factor', 'Weight_lb'
+    % Add scores to the sorted data (now 10 columns)
+    final_data = [sorted_data, scores_18];
+    
+    % Show top 5 balanced designs
+    num_to_show = min(5, size(final_data, 1));
+    T18 = array2table(final_data(1:num_to_show,:), 'VariableNames', {
+        'Sun', 'Earth', 'Moon', 'Ring', 'Ratio', 'Ring_OD', 'First_Stage_OD', 'Safety_Factor', 'Weight_lb', 'Score'
     });
     disp(T18);
     
-    % Show best DP18 design
+    % Show best balanced DP18 design
     best_18DP = DP18_designs_sorted(1);
-    fprintf('\nBEST DP 18 DESIGN:\n');
+    fprintf('\nBEST BALANCED DP 18 DESIGN:\n');
     fprintf('Sun: %d, Earth: %d, Moon: %d, Ring: %d\n', ...
         best_18DP.sun_teeth, best_18DP.planet_large_teeth, ...
         best_18DP.planet_small_teeth, best_18DP.ring_teeth);
-    fprintf('Ratio: %.2f:1, Ring OD: %.2f", First Stage OD: %.2f", Safety: %.1f\n', ...
-        best_18DP.overall_ratio, best_18DP.ring_OD, best_18DP.first_stage_OD, best_18DP.bending_safety);
+    fprintf('Ratio: %.2f:1, Ring OD: %.2f", First Stage OD: %.2f", Safety: %.1f, Weight: %.2f lb, Score: %.3f\n', ...
+        best_18DP.overall_ratio, best_18DP.ring_OD, best_18DP.first_stage_OD, ...
+        best_18DP.bending_safety, best_18DP.weight, scores_18(1));
     fprintf('\n');
 end
 
-% DP 20 Designs
+% DP 20 Designs (example for DP20 - do same for all DPs)
 if ~isempty(DP20_designs)
-    fprintf('========================== TOP DP 20 DESIGNS (STRONGEST) ==========================\n');
+    fprintf('========================== TOP DP 20 DESIGNS (BEST BALANCED) ==========================\n');
     
-    % Convert DP20 to table
+    % Convert to data array
     n = length(DP20_designs);
-    data_20DP = zeros(n, 9);
+    data_array = zeros(n, 9);
     for i = 1:n
         combo = DP20_designs(i);
-        data_20DP(i,:) = [combo.sun_teeth, combo.planet_large_teeth, ...
+        data_array(i,:) = [combo.sun_teeth, combo.planet_large_teeth, ...
                           combo.planet_small_teeth, combo.ring_teeth, ...
-                          combo.overall_ratio, combo.ring_OD, combo.first_stage_OD, combo.bending_safety, combo.weight];
+                          combo.overall_ratio, combo.ring_OD, combo.first_stage_OD, ...
+                          combo.bending_safety, combo.weight];
     end
     
-    % Sort by weight (lowest to highest)
-    [~, sort_idx] = sort(data_20DP(:,9));  % Column 9 = weight
-    data_20DP = data_20DP(sort_idx,:);
-    DP20_designs_sorted = DP20_designs(sort_idx);
+    % Apply weighted scoring (this does ALL the sorting)
+    [sorted_data, DP20_designs_sorted, scores_20] = apply_weighted_scoring(data_array, DP20_designs, 10.5);
     
-    % Show top 5 designs
-    num_to_show = min(5, size(data_20DP, 1));
-    T20 = array2table(data_20DP(1:num_to_show,:), 'VariableNames', {
-        'Sun', 'Earth', 'Moon', 'Ring', 'Ratio', 'Ring_OD', 'First_Stage_OD', 'Safety_Factor', 'Weight_lb'
+    % Add scores to the sorted data (now 10 columns)
+    final_data = [sorted_data, scores_20];
+    
+    % Show top 5 balanced designs
+    num_to_show = min(5, size(final_data, 1));
+    T20 = array2table(final_data(1:num_to_show,:), 'VariableNames', {
+        'Sun', 'Earth', 'Moon', 'Ring', 'Ratio', 'Ring_OD', 'First_Stage_OD', 'Safety_Factor', 'Weight_lb', 'Score'
     });
     disp(T20);
     
-    % Show best DP20 design
+    % Show best balanced DP20 design
     best_20DP = DP20_designs_sorted(1);
-    fprintf('\nBEST DP 20 DESIGN:\n');
+    fprintf('\nBEST BALANCED DP 20 DESIGN:\n');
     fprintf('Sun: %d, Earth: %d, Moon: %d, Ring: %d\n', ...
         best_20DP.sun_teeth, best_20DP.planet_large_teeth, ...
         best_20DP.planet_small_teeth, best_20DP.ring_teeth);
-    fprintf('Ratio: %.2f:1, Ring OD: %.2f", First Stage OD: %.2f", Safety: %.1f\n', ...
-        best_20DP.overall_ratio, best_20DP.ring_OD, best_20DP.first_stage_OD, best_20DP.bending_safety);
+    fprintf('Ratio: %.2f:1, Ring OD: %.2f", First Stage OD: %.2f", Safety: %.1f, Weight: %.2f lb, Score: %.3f\n', ...
+        best_20DP.overall_ratio, best_20DP.ring_OD, best_20DP.first_stage_OD, ...
+        best_20DP.bending_safety, best_20DP.weight, scores_20(1));
     fprintf('\n');
 end
 
 % DP 22 Designs
 if ~isempty(DP22_designs)
-    fprintf('========================== TOP DP 22 DESIGNS (STRONGEST) ==========================\n');
+    fprintf('========================== TOP DP 22 DESIGNS (BEST BALANCED) ==========================\n');
     
-    % Convert DP22 to table
+    % Convert to data array
     n = length(DP22_designs);
-    data_22DP = zeros(n, 9);
+    data_array = zeros(n, 9);
     for i = 1:n
         combo = DP22_designs(i);
-        data_22DP(i,:) = [combo.sun_teeth, combo.planet_large_teeth, ...
+        data_array(i,:) = [combo.sun_teeth, combo.planet_large_teeth, ...
                           combo.planet_small_teeth, combo.ring_teeth, ...
-                          combo.overall_ratio, combo.ring_OD, combo.first_stage_OD, combo.bending_safety, combo.weight];
+                          combo.overall_ratio, combo.ring_OD, combo.first_stage_OD, ...
+                          combo.bending_safety, combo.weight];
     end
     
-    % Sort by weight (lowest to highest)
-    [~, sort_idx] = sort(data_22DP(:,9));  % Column 9 = weight
-    data_22DP = data_22DP(sort_idx,:);
-    DP22_designs_sorted = DP22_designs(sort_idx);
+    % Apply weighted scoring (this does ALL the sorting)
+    [sorted_data, DP22_designs_sorted, scores_22] = apply_weighted_scoring(data_array, DP22_designs, 10.5);
     
-    % Show top 5 designs
-    num_to_show = min(5, size(data_22DP, 1));
-    T22 = array2table(data_22DP(1:num_to_show,:), 'VariableNames', {
-        'Sun', 'Earth', 'Moon', 'Ring', 'Ratio', 'Ring_OD', 'First_Stage_OD', 'Safety_Factor','Weight_lb' 
+    % Add scores to the sorted data (now 10 columns)
+    final_data = [sorted_data, scores_22];
+    
+    % Show top 5 balanced designs
+    num_to_show = min(5, size(final_data, 1));
+    T22 = array2table(final_data(1:num_to_show,:), 'VariableNames', {
+        'Sun', 'Earth', 'Moon', 'Ring', 'Ratio', 'Ring_OD', 'First_Stage_OD', 'Safety_Factor', 'Weight_lb', 'Score'
     });
     disp(T22);
     
-    % Show best DP22 design
+    % Show best balanced DP22 design
     best_22DP = DP22_designs_sorted(1);
-    fprintf('\nBEST DP 22 DESIGN:\n');
+    fprintf('\nBEST BALANCED DP 22 DESIGN:\n');
     fprintf('Sun: %d, Earth: %d, Moon: %d, Ring: %d\n', ...
         best_22DP.sun_teeth, best_22DP.planet_large_teeth, ...
         best_22DP.planet_small_teeth, best_22DP.ring_teeth);
-    fprintf('Ratio: %.2f:1, Ring OD: %.2f", First Stage OD: %.2f", Safety: %.1f\n', ...
-        best_22DP.overall_ratio, best_22DP.ring_OD, best_22DP.first_stage_OD, best_22DP.bending_safety);
+    fprintf('Ratio: %.2f:1, Ring OD: %.2f", First Stage OD: %.2f", Safety: %.1f, Weight: %.2f lb, Score: %.3f\n', ...
+        best_22DP.overall_ratio, best_22DP.ring_OD, best_22DP.first_stage_OD, ...
+        best_22DP.bending_safety, best_22DP.weight, scores_22(1));
     fprintf('\n');
 end
 
 % DP 24 Designs
 if ~isempty(DP24_designs)
-    fprintf('========================== TOP DP 24 DESIGNS (STRONGEST) ==========================\n');
+    fprintf('========================== TOP DP 24 DESIGNS (BEST BALANCED) ==========================\n');
     
-    % Convert DP24 to table
+    % Convert to data array
     n = length(DP24_designs);
-    data_24DP = zeros(n, 9);
+    data_array = zeros(n, 9);
     for i = 1:n
         combo = DP24_designs(i);
-        data_24DP(i,:) = [combo.sun_teeth, combo.planet_large_teeth, ...
+        data_array(i,:) = [combo.sun_teeth, combo.planet_large_teeth, ...
                           combo.planet_small_teeth, combo.ring_teeth, ...
-                          combo.overall_ratio, combo.ring_OD, combo.first_stage_OD, combo.bending_safety, combo.weight];
+                          combo.overall_ratio, combo.ring_OD, combo.first_stage_OD, ...
+                          combo.bending_safety, combo.weight];
     end
     
-    % Sort by weight (lowest to highest)
-    [~, sort_idx] = sort(data_24DP(:,9));  % Column 9 = weight
-    data_24DP = data_24DP(sort_idx,:);
-    DP24_designs_sorted = DP24_designs(sort_idx);
+    % Apply weighted scoring (this does ALL the sorting)
+    [sorted_data, DP24_designs_sorted, scores_24] = apply_weighted_scoring(data_array, DP24_designs, 10.5);
     
-    % Show top 5 designs
-    num_to_show = min(5, size(data_24DP, 1));
-    T24 = array2table(data_24DP(1:num_to_show,:), 'VariableNames', {
-        'Sun', 'Earth', 'Moon', 'Ring', 'Ratio', 'Ring_OD', 'First_Stage_OD', 'Safety_Factor', 'Weight_lb'
+    % Add scores to the sorted data (now 10 columns)
+    final_data = [sorted_data, scores_24];
+    
+    % Show top 5 balanced designs
+    num_to_show = min(5, size(final_data, 1));
+    T24 = array2table(final_data(1:num_to_show,:), 'VariableNames', {
+        'Sun', 'Earth', 'Moon', 'Ring', 'Ratio', 'Ring_OD', 'First_Stage_OD', 'Safety_Factor', 'Weight_lb', 'Score'
     });
     disp(T24);
     
-    % Show best DP24 design
+    % Show best balanced DP24 design
     best_24DP = DP24_designs_sorted(1);
-    fprintf('\nBEST DP 24 DESIGN:\n');
+    fprintf('\nBEST BALANCED DP 24 DESIGN:\n');
     fprintf('Sun: %d, Earth: %d, Moon: %d, Ring: %d\n', ...
         best_24DP.sun_teeth, best_24DP.planet_large_teeth, ...
         best_24DP.planet_small_teeth, best_24DP.ring_teeth);
-    fprintf('Ratio: %.2f:1, Ring OD: %.2f", First Stage OD: %.2f", Safety: %.1f\n', ...
-        best_24DP.overall_ratio, best_24DP.ring_OD, best_24DP.first_stage_OD, best_24DP.bending_safety);
+    fprintf('Ratio: %.2f:1, Ring OD: %.2f", First Stage OD: %.2f", Safety: %.1f, Weight: %.2f lb, Score: %.3f\n', ...
+        best_24DP.overall_ratio, best_24DP.ring_OD, best_24DP.first_stage_OD, ...
+        best_24DP.bending_safety, best_24DP.weight, scores_24(1));
     fprintf('\n');
 end
 
@@ -568,6 +583,8 @@ function DP_range = calculate_DP_limits(torque_Nm, yield_strength, safety, max_g
     fprintf('Testing DP values: ');
     fprintf('%d ', DP_range);
     fprintf('\n');
+
+    
 end
 %% ==================== CSV OUTPUT ====================
 function output_to_csv(combinations, filename)
@@ -600,4 +617,40 @@ writetable(T, filename);
 current_folder = pwd;
 full_path = fullfile(current_folder, filename);
 fprintf('Results written to: %s\n', full_path);
+
+
+end
+
+%% sort 
+function [sorted_data, sorted_designs, combined_scores] = apply_weighted_scoring(data, designs, ideal_ratio)
+    % Extract columns
+    weights = data(:,9);  % Column 9 = weight
+    ratios = data(:,5);   % Column 5 = gear ratio
+    
+    % Normalize both metrics to 0-1 scale (lower is better)
+    if max(weights) == min(weights)
+        normalized_weights = zeros(size(weights));  % All weights are equal
+    else
+        normalized_weights = (weights - min(weights)) / (max(weights) - min(weights));
+    end
+    
+    ratio_deviations = abs(ratios - ideal_ratio);
+    if max(ratio_deviations) == min(ratio_deviations)
+        normalized_ratios = zeros(size(ratio_deviations));  % All ratios are equal
+    else
+        normalized_ratios = (ratio_deviations - min(ratio_deviations)) / (max(ratio_deviations) - min(ratio_deviations));
+    end
+    
+    % Apply weighting factors
+    weight_factor = 0.65;    % 60% importance on weight
+    ratio_factor = 0.35;     % 40% importance on ratio proximity
+    
+    % Calculate combined score (lower is better)
+    combined_scores = (weight_factor * normalized_weights) + (ratio_factor * normalized_ratios);
+    
+    % Sort by combined score (lowest first = best)
+    [sorted_scores, sort_idx] = sort(combined_scores);
+    sorted_data = data(sort_idx,:);
+    sorted_designs = designs(sort_idx);
+    combined_scores = sorted_scores;  % Return the sorted scores
 end
