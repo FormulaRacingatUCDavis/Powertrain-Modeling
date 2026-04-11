@@ -13,7 +13,7 @@ function compoundPlanetaryDesign()
     % Physical constraints
     min_motor_shaft = 0.60;           % inches
     max_gearbox_OD = 5.25;            % inches
-    max_gearbox_width = 3;         % inches
+    max_gearbox_width = 2.625;         % inches
     Np = 3;                           % Number of planets
     
     % Load parameters
