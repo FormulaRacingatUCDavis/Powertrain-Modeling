@@ -1,3 +1,12 @@
 *.slxc
 **/slprj
 *.asv
+Powertrain Models/CPSLO Model/PerformanceLog.txt
+Powertrain Models/CPSLO Model/Stepped Shaft SubAssem-Static 1-BenchMark-Solver.txt
+Powertrain Models/CPSLO Model/Stepped Shaft SubAssem-Static 1.BD2
+Powertrain Models/CPSLO Model/Stepped Shaft SubAssem-Static 1.BDF
+Powertrain Models/CPSLO Model/Stepped Shaft SubAssem-Static 1.CWR
+Powertrain Models/CPSLO Model/Stepped Shaft SubAssem-Static 1.DF1
+Powertrain Models/CPSLO Model/Stepped Shaft SubAssem-Static 1.DF2
+Powertrain Models/CPSLO Model/Stepped Shaft SubAssem-Static 1.gsz
+Powertrain Models/CPSLO Model/Stepped Shaft SubAssem-Static 1.LOG
